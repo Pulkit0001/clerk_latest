@@ -1,0 +1,98 @@
+{
+  "project_info": {
+    "project_number": "430019546238",
+    "project_id": "clerk-fbcaf",
+    "storage_bucket": "clerk-fbcaf.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:430019546238:android:7dfc7959efb062bbf35c2f",
+        "android_client_info": {
+          "package_name": "com.modcons.clerk"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "430019546238-vkp0t56v0nfr6n7t7pm3ktlj8292u2l4.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.modcons.clerk",
+            "certificate_hash": "9de309e80db3f39ce864ebdb5eb057b1201d3eb0"
+          }
+        },
+        {
+          "client_id": "430019546238-vqh0eurgeh87cpp2acksogh9og7cdta7.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCZKyW4MglPKhqLeLwSORz8kstfgv6CjQ0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "430019546238-vqh0eurgeh87cpp2acksogh9og7cdta7.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "430019546238-5tdmbu9ot0dj4pb8inoa7t32eml58ehh.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.modcons.clerk"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:430019546238:android:112de8dfae112114f35c2f",
+        "android_client_info": {
+          "package_name": "com.modcons99.clerk"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "430019546238-a3s0ko75je2ta7dor5s7o6f03ov2rbb6.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.modcons99.clerk",
+            "certificate_hash": "9de309e80db3f39ce864ebdb5eb057b1201d3eb0"
+          }
+        },
+        {
+          "client_id": "430019546238-vqh0eurgeh87cpp2acksogh9og7cdta7.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCZKyW4MglPKhqLeLwSORz8kstfgv6CjQ0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "430019546238-vqh0eurgeh87cpp2acksogh9og7cdta7.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "430019546238-5tdmbu9ot0dj4pb8inoa7t32eml58ehh.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.modcons.clerk"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

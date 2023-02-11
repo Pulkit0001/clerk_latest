@@ -1,0 +1,6 @@
+
+
+
+class HandledException implements Exception{
+
+}
