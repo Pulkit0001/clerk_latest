@@ -21,6 +21,7 @@ class Candidate {
 
   final String id;
   final int age;
+  late num pendingAmount;
   final String name;
   final String group;
   final String email;
@@ -44,11 +45,11 @@ class Candidate {
         name: json["candidate_name"],
         group: json["candidate_group"],
         email: json["candidate_email"],
-        extraCharges: List<String>.from(json["extra_charges"].map((x) => x)),
-        groupCharges: List<String>.from(json["group_charges"].map((x) => x)),
+        extraCharges: json["extra_charges"] == null ? [] : List<String>.from(json["extra_charges"].map((x) => x)),
+        groupCharges: json["group_charges"] == null ? [] : List<String>.from(json["group_charges"].map((x) => x)),
         contact: json["candidate_contact"],
         address: json["candidate_address"],
-        payments: List<String>.from(json["candidate_payments"].map((x) => x)),
+        payments: json['candidate_payments'] == null ? [] : List<String>.from(json["candidate_payments"].map((x) => x)),
         profilePic: json["candidate_profile_pic"],
         optionalContact: json["candidate_optional_contact"],
         status: EntityStatus.values

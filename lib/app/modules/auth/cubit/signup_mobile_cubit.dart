@@ -1,4 +1,4 @@
-import 'package:country_code_picker/country_code.dart';
+import 'package:country_code_picker/country_code_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -140,18 +140,6 @@ class SignupMobileCubit extends Cubit<SignUpMobileState> {
     }, (r) async {
       /// If otp verification success
       credential = r;
-      // await FirebaseChatCore.instance.createUserInFirestore(
-      //   types.User(
-      //     createdAt: DateTime.now().millisecondsSinceEpoch~/1000,
-      //     firstName:credential?.user?.displayName ?? 'Test',
-      //     id:credential?.user?.uid ?? '',
-      //     imageUrl:credential?.user?.photoURL ?? '',
-      //     lastName: credential?.user?.displayName ?? 'test',
-      //     updatedAt: DateTime.now().millisecondsSinceEpoch~/1000,
-      //     lastSeen: DateTime.now().millisecondsSinceEpoch~/1000
-      //
-      //     ,
-      //   ),);
       getIt<Session>().setUserCredential(r);
       emit(
         state.copyWith.call(

@@ -2,6 +2,7 @@
 
 
 const String defaultErrorTitle = "OOPS!";
+const String defaultSuccessTitle = "Great!";
 const String defaultErrorBody = "Some error is happening. Please contact us to our support email help.modcons@gmail.com";
 const String ACTION_TYPE = "Some error is happening. Please contact us to our support email help.modcons@gmail.com";
 
@@ -91,3 +92,10 @@ const dummyChargeData =  {
 
 const String ADD_CHARGE = "add charge";
 const String EDITCHARGE = "edit charge";
+
+
+
+abstract class StringConstants {
+
+  static const String somethingWentWrong ='Something went wrong. Please try later.';
+}

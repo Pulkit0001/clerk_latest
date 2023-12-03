@@ -1,4 +1,3 @@
-import 'package:clerk/app/custom_widgets/custom_divider.dart';
 import 'package:clerk/app/custom_widgets/custom_filled_button.dart';
 import 'package:clerk/app/utils/extensions.dart';
 import 'package:clerk/app/values/colors.dart';
@@ -85,8 +84,8 @@ class ClerkDialog extends StatelessWidget {
               CustomFilledButton(
                   label: positiveLabel,
                   onPressed: () async {
-                    await onPositivePressed.call();
                     context.navigate.pop();
+                    await onPositivePressed.call();
                   }),
               if (negativeLabel != null) ...[
                 SizedBox(
@@ -96,8 +95,8 @@ class ClerkDialog extends StatelessWidget {
                     label: negativeLabel!,
                     btnColor: Colors.grey,
                     onPressed: () async {
-                      await onNegativePressed!.call();
                       context.navigate.pop();
+                      await onNegativePressed!.call();
                     })
               ],
               SizedBox(

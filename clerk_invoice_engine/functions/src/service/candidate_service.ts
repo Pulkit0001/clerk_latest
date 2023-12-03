@@ -49,7 +49,7 @@ export class CandidateService {
       .collection(CANDIDATES_COLLECTION)
       .doc(canidateId)
       .collection(CHARGES_COLLECTION)
-      .where(firestore.FieldPath.documentId(), "in", [ ... chargesDoc.keys()])
+      .where(firestore.FieldPath.documentId(), "in", [...chargesDoc.keys()])
       .get();
 
     const writeBatch = this.firestore.batch();
@@ -66,7 +66,8 @@ export class CandidateService {
   async updateCandidateBillingDate(
     id: string,
     userId: string,
-    nextBillingDate: Timestamp
+    nextBillingDate: Timestamp,
+    invoiceId: String | undefined
   ): Promise<void> {
     try {
       var candidate = this.firestore
@@ -74,10 +75,19 @@ export class CandidateService {
         .doc(userId)
         .collection(CANDIDATES_COLLECTION)
         .doc(id);
-
-      await candidate.update({
-        next_billing_date: nextBillingDate,
-      });
+      var data;
+      if (invoiceId) {
+        data = {
+          next_billing_date: nextBillingDate,
+          candidate_payments:
+            firestore.FieldValue.arrayUnion(invoiceId),
+        };
+      } else {
+        data = {
+          next_billing_date: nextBillingDate,
+        };
+      }
+      await candidate.update(data);
     } catch (e) {
       console.log(e);
       throw e;

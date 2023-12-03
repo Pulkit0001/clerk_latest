@@ -17,13 +17,13 @@ class InvoiceService {
   Future<String> createInvoice({required String candidateId}) async {
     try {
       HttpsCallable callable = functions.httpsCallable(
-        'generateInvoice',
+        'generateInvoiceForCandidate',
       );
-
-      final result = await callable.call({'candidateId': candidateId});
+      final result = await callable.call(
+          {'candidate_id': candidateId, 'user_id': session.currentUser!.uid});
       if (result.data['status']) {
         return 'Invoice Generated Successfully';
-      }else{
+      } else {
         throw Exception("Server Error");
       }
     } on Exception catch (e) {
@@ -33,33 +33,49 @@ class InvoiceService {
   }
 
   Future<List<Invoice>> getInvoices(
-      {List<String>? candidateIds, List<InvoiceStatus>? status}) async {
+      {List<String>? candidateIds, InvoiceStatus? status}) async {
     try {
+      if (candidateIds != null && candidateIds.isEmpty) {
+        return <Invoice>[];
+      }
       var id = session.currentUser!.uid;
-      final invoicesQuery = firestore
+      dynamic invoicesQuery = firestore
           .collection(USERS_COLLECTION)
           .doc(id)
           .collection(INVOICES_COLLECTION);
 
-      if (status.isNotNullEmpty) {
-        invoicesQuery.where('invoiceStatus',
-            whereIn: status!.map((e) => e.name).toList());
+      final candidatesQuery = firestore
+          .collection(USERS_COLLECTION)
+          .doc(id)
+          .collection(CANDIDATES_COLLECTION);
+
+      if (status != null) {
+        invoicesQuery =
+            invoicesQuery.where('invoiceStatus', isEqualTo: status.name);
       }
       if (candidateIds.isNotNullEmpty) {
-        invoicesQuery.where('payerId', whereIn: candidateIds);
+        invoicesQuery = invoicesQuery.where('payerId', whereIn: candidateIds);
       }
       var res = await invoicesQuery.get();
       var invoiceDocs = res.docs;
 
-      List<Invoice> invoiceList = invoiceDocs.map((e) {
+      List<Invoice> invoiceList = [];
+
+      for (var e in invoiceDocs) {
         var x = e.data();
         x.addAll({"id": e.id});
-        return Invoice.fromJson(x);
-      }).toList();
+        if (x['payerId'] != null) {
+          var candidate = await candidatesQuery.doc(x['payerId']).get();
+          x.addAll({
+            "candidate": {...?candidate.data(), 'candidate_id': x['payerId']}
+          });
+        }
+        invoiceList.add(Invoice.fromJson(x));
+      }
 
       return invoiceList;
-    } on Exception catch (e) {
-      CustomExceptionHandler.handle(e);
+    } catch (e) {
+      CustomExceptionHandler.handle(e as Exception);
       rethrow;
     }
   }
@@ -75,11 +91,11 @@ class InvoiceService {
 
       var invoiceDoc = await invoicesQuery.get();
 
-      if(invoiceDoc.exists) {
+      if (invoiceDoc.exists) {
         var x = invoiceDoc.data()!;
         x.addAll({"id": invoiceDoc.id});
         return Invoice.fromJson(x);
-      }else{
+      } else {
         throw Exception("Invoice not Found");
       }
     } on Exception catch (e) {
@@ -104,23 +120,21 @@ class InvoiceService {
     }
   }
 
-
-
   Future<num> getTotalSum(
-      {List<String>? candidateIds, List<InvoiceStatus>? status}) async {
+      {List<String>? candidateIds, InvoiceStatus? status}) async {
     try {
       var id = session.currentUser!.uid;
-      final invoicesQuery = firestore
+      dynamic invoicesQuery = firestore
           .collection(USERS_COLLECTION)
           .doc(id)
           .collection(INVOICES_COLLECTION);
 
-      if (status.isNotNullEmpty) {
-        invoicesQuery.where('invoiceStatus',
-            whereIn: status!.map((e) => e.name).toList());
+      if (status != null) {
+        invoicesQuery =
+            invoicesQuery.where('invoiceStatus', isEqualTo: status.name);
       }
       if (candidateIds.isNotNullEmpty) {
-        invoicesQuery.where('payerId', whereIn: candidateIds);
+        invoicesQuery = invoicesQuery.where('payerId', whereIn: candidateIds);
       }
       var res = await invoicesQuery.get();
       var invoiceDocs = res.docs;
@@ -130,10 +144,39 @@ class InvoiceService {
         sum = sum + (e['totalAmount'] as num);
       }).toList();
       return sum;
-    } on Exception catch (e) {
-      CustomExceptionHandler.handle(e);
+    } catch (e) {
+      print(e.toString());
+      CustomExceptionHandler.handle(e as Exception);
       rethrow;
     }
   }
 
+  Future<Map<String, num?>> getPendingAmounts(
+      {List<String>? candidatesId}) async {
+    try {
+      var id = session.currentUser!.uid;
+      var invoicesQuery = firestore
+          .collection(USERS_COLLECTION)
+          .doc(id)
+          .collection(INVOICES_COLLECTION).where('invoiceStatus',
+          isEqualTo: InvoiceStatus.pending.name);
+
+
+      if (candidatesId.isNotNullEmpty) {
+        invoicesQuery = invoicesQuery.where('payerId', whereIn: candidatesId);
+      }
+      var res = await invoicesQuery.get();
+      var invoiceDocs = res.docs;
+      var pendingAmounts = <String, num?>{};
+
+      invoiceDocs.map((e) {
+        pendingAmounts.putIfAbsent(e['payerId'], () => e['totalAmount']);
+      }).toList();
+      return pendingAmounts;
+    } catch (e) {
+      print(e.toString());
+      CustomExceptionHandler.handle(e as Exception);
+      rethrow;
+    }
+  }
 }

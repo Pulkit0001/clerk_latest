@@ -13,16 +13,26 @@ import '../../../../utils/enums/payment_interval_enums.dart';
 class ChargesFormCubit extends Cubit<ChargeFormState> {
   ChargesFormCubit({required this.repo, Charge? charge})
       : super(ChargeFormState.initial(charge: charge)) {
-    if (charge == null) {
-      toCreate = true;
-    } else {
+    if (charge != null) {
       toCreate = false;
+      timeValue = 16.666666 * (charge.interval.index - 1);
+      if(timeValue < 0){
+        timeValue = 0;
+      }
+      nameController = TextEditingController(text: charge.name);
+      descController = TextEditingController(text: charge.description);
+      amountController = TextEditingController(text: charge.amount.toString());
+    } else {
+      toCreate = true;
+      nameController = TextEditingController();
+      descController = TextEditingController();
+      amountController = TextEditingController();
     }
   }
 
-  final TextEditingController nameController = TextEditingController();
-  final TextEditingController descController = TextEditingController();
-  final TextEditingController amountController = TextEditingController();
+  late final TextEditingController nameController;
+  late final TextEditingController descController;
+  late final TextEditingController amountController;
 
   final GlobalKey<FormState> pricingFormState = GlobalKey<FormState>();
   final GlobalKey<FormState> generalFormState = GlobalKey<FormState>();
@@ -66,17 +76,38 @@ class ChargesFormCubit extends Cubit<ChargeFormState> {
     emit(state.copyWith(formState: CustomFormState.uploading));
 
     Charge charge = state.charge.copyWith(
-      name: nameController.text,
-      description: descController.text,
-      amount: num.parse(amountController.text),
-        status: EntityStatus.active
-    );
+        name: nameController.text.trim(),
+        description: descController.text.trim(),
+        amount: num.parse(amountController.text.trim()),
+        status: EntityStatus.active);
     var res = await repo.createCharge(charge: charge);
 
     res.fold(
       (l) {
         emit(state.copyWith(
             formState: CustomFormState.success, successMessage: l));
+        navigatorKey.currentState?.pop();
+      },
+      (r) {
+        emit(state.copyWith(formState: CustomFormState.error, errorMessage: r));
+      },
+    );
+  }
+
+  void updateCharge() async {
+    emit(state.copyWith(formState: CustomFormState.uploading));
+
+    Charge charge = state.charge.copyWith(
+        name: nameController.text.trim(),
+        description: descController.text.trim(),
+        amount: num.parse(amountController.text.trim()),
+        status: EntityStatus.active);
+    var res = await repo.updateCharge(charge: charge);
+
+    res.fold(
+      (l) {
+        emit(state.copyWith(
+            formState: CustomFormState.success, successMessage: "Charge updated successfully."));
         navigatorKey.currentState?.pop();
       },
       (r) {

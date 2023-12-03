@@ -8,6 +8,8 @@ abstract class GroupRepo {
 
   Future<Either<List<Group>, String>> getAllGroups({List<String>? groupIds});
 
+  Future<Either<String, String>> getCurrentGroup();
+
   Future<Either<List<Candidate>, String>> getCandidates({ required String groupId});
 
   Future<Either<List<Charge>, String>> getCharges({ required String groupId});

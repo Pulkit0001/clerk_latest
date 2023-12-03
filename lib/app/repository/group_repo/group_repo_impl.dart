@@ -16,15 +16,14 @@ class GroupRepoImpl extends GroupRepo {
     try {
       var groupData = await groupsService.getGroups(groupsId: [groupId]);
 
-
-    var candidates = groupData.first.candidates;
+      var candidates = groupData.first.candidates;
       candidates.addAll(candidateIds);
 
-    var res =
-    await groupsService.updateGroup(groupData.first.copyWith(candidates: candidates));
-    return Left(res);
+      var res = await groupsService
+          .updateGroup(groupData.first.copyWith(candidates: candidates));
+      return Left(res);
     } catch (e) {
-    return Right(e.toString());
+      return Right(e.toString());
     }
   }
 
@@ -57,6 +56,16 @@ class GroupRepoImpl extends GroupRepo {
   }
 
   @override
+  Future<Either<String, String>> getCurrentGroup() async {
+    try {
+      var res = await groupsService.getCurrentGroup();
+      return Left(res);
+    } catch (e) {
+      return Right(e.toString());
+    }
+  }
+
+  @override
   Future<Either<bool, String>> deleteGroup({required String groupId}) async {
     try {
       var res = await groupsService.deleteGroup(groupId);
@@ -79,9 +88,19 @@ class GroupRepoImpl extends GroupRepo {
 
   @override
   Future<Either<bool, String>> removeCandidates(
-      {required String groupId, required List<String> candidateIds}) {
-    // TODO: implement removeCandidates
-    throw UnimplementedError();
+      {required String groupId, required List<String> candidateIds}) async {
+    try {
+      var groupData = await groupsService.getGroups(groupsId: [groupId]);
+
+      var candidates = groupData.first.candidates;
+      candidates.removeWhere((element) => candidateIds.contains(element));
+
+      var res = await groupsService
+          .updateGroup(groupData.first.copyWith(candidates: candidates));
+      return Left(res);
+    } catch (e) {
+      return Right(e.toString());
+    }
   }
 
   @override
@@ -113,7 +132,8 @@ class GroupRepoImpl extends GroupRepo {
   }
 
   @override
-  Future<Either<List<Candidate>, String>> getCandidates({required String groupId}) {
+  Future<Either<List<Candidate>, String>> getCandidates(
+      {required String groupId}) {
     // TODO: implement getCandidates
     throw UnimplementedError();
   }

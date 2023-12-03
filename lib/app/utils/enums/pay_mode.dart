@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 
-enum InvoicePayMode { cash, online }
+enum InvoicePayMode {  online, cash, }
 
 extension InvoicePayModeValue on InvoicePayMode {
   String get name => describeEnum(this);

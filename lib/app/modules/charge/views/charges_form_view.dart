@@ -1,9 +1,12 @@
+import 'package:clerk/app/custom_widgets/custom_filled_button.dart';
 import 'package:clerk/app/custom_widgets/custom_stepper.dart';
+import 'package:clerk/app/data/models/charge_data_model.dart';
 import 'package:clerk/app/modules/charge/bloc/cubits/charge_form_cubit.dart';
 import 'package:clerk/app/modules/charge/bloc/states/charge_form_state.dart';
 import 'package:clerk/app/modules/charge/widgets/charges_general_form_widget.dart';
 import 'package:clerk/app/modules/charge/widgets/charges_pricing_form_widget.dart';
 import 'package:clerk/app/repository/charge_repo/charge_repo.dart';
+import 'package:clerk/app/utils/enums/view_state_enums.dart';
 import 'package:clerk/app/utils/extensions.dart';
 import 'package:clerk/app/utils/locator.dart';
 import 'package:clerk/app/values/colors.dart';
@@ -11,6 +14,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:loader_overlay/loader_overlay.dart';
 
 List<Widget> chargeFormPages = [
   ChargeGeneralDetails(),
@@ -19,129 +23,155 @@ List<Widget> chargeFormPages = [
 ];
 
 class ChargesFormView extends StatelessWidget {
-  static Route<dynamic> getRoute() {
-    return MaterialPageRoute(builder: (context) => ChargesFormView());
+  static Route<dynamic> getRoute({Charge? charge}) {
+    return MaterialPageRoute(
+      builder: (context) => BlocProvider(
+        create: (BuildContext context) =>
+            ChargesFormCubit(repo: getIt<ChargeRepo>(), charge: charge),
+        child: ChargesFormView(),
+      ),
+    );
   }
 
   final int nbSteps = 2;
   @override
   Widget build(BuildContext context) {
-    return BlocProvider<ChargesFormCubit>(
-      create: (BuildContext context) => ChargesFormCubit(
-        repo: getIt<ChargeRepo>(),
-      ),
-      child: SafeArea(
-        child: Scaffold(
-          backgroundColor: backgroundColor,
-          body: Builder(
-            builder: (context) {
-              return BlocBuilder<ChargesFormCubit, ChargeFormState>(
-                builder: (context, state) {
-                  return Container(
-                    child: Column(
-                      children: [
-                        Expanded(
-                          child: Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 12.w),
-                            child: Column(
-                              children: [
-                                Expanded(
-                                  flex: 3,
-                                  child: Card(
-                                    clipBehavior: Clip.hardEdge,
+    return SafeArea(
+      child: Scaffold(
+        backgroundColor: backgroundColor,
+        body: BlocConsumer<ChargesFormCubit, ChargeFormState>(
+          listener: (context, state) {
+            if (state.formState == CustomFormState.uploading ||
+                state.formState == CustomFormState.loading) {
+              context.loaderOverlay.show();
+            } else {
+              context.loaderOverlay.hide();
+            }
+          },
+          builder: (context, state) {
+            return Container(
+              child: Column(
+                children: [
+                  Expanded(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 12.w),
+                      child: Column(
+                        children: [
+                          Expanded(
+                            flex: 3,
+                            child: Card(
+                              clipBehavior: Clip.hardEdge,
+                              color: primaryColor,
+                              margin: EdgeInsets.zero,
+                              elevation: 6,
+                              shadowColor: primaryColor,
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.vertical(
+                                      bottom: Radius.circular(24.w))),
+                              child: Container(
+                                decoration: BoxDecoration(
                                     color: primaryColor,
-                                    margin: EdgeInsets.zero,
-                                    elevation: 6,
-                                    shadowColor: primaryColor,
-                                    shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.vertical(
-                                            bottom: Radius.circular(24.w))),
-                                    child: Container(
-                                      decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.vertical(
+                                        bottom: Radius.circular(24.w))),
+                                child: Row(
+                                  children: [
+                                    SizedBox(
+                                      width: 12.w,
+                                    ),
+                                    GestureDetector(
+                                      onTap: () {
+                                        context.navigate.pop();
+                                      },
+                                      child: Container(
+                                        padding: EdgeInsets.all(8.w),
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          color: backgroundColor,
+                                        ),
+                                        child: Icon(
+                                          Icons.arrow_back_ios_rounded,
                                           color: primaryColor,
-                                          borderRadius: BorderRadius.vertical(
-                                              bottom: Radius.circular(24.w))),
-                                      child: Row(
-                                        children: [
-                                          SizedBox(
-                                            width: 12.w,
-                                          ),
-                                          GestureDetector(
-                                            onTap: () {
-                                              context.navigate.pop();
-                                            },
-                                            child: Container(
-                                              padding: EdgeInsets.all(8.w),
-                                              decoration: BoxDecoration(
-                                                shape: BoxShape.circle,
-                                                color: backgroundColor,
-                                              ),
-                                              child: Icon(
-                                                Icons.arrow_back_ios_rounded,
-                                                color: primaryColor,
-                                                size: 24.w,
-                                              ),
-                                            ),
-                                          ),
-                                          SizedBox(
-                                            width: 12.w,
-                                          ),
-                                          Text("Charge",
-                                              style: GoogleFonts.nunito(
-                                                  color: backgroundColor,
-                                                  fontSize: 24.sp,
-                                                  fontWeight: FontWeight.bold,
-                                                  letterSpacing: 1))
-                                        ],
+                                          size: 24.w,
+                                        ),
                                       ),
                                     ),
-                                  ),
+                                    SizedBox(
+                                      width: 12.w,
+                                    ),
+                                    Text("Charge",
+                                        style: GoogleFonts.nunito(
+                                            color: backgroundColor,
+                                            fontSize: 24.sp,
+                                            fontWeight: FontWeight.bold,
+                                            letterSpacing: 1))
+                                  ],
                                 ),
-                                Expanded(
-                                    flex: 1,
-                                    child: Container(
-                                      color: Colors.transparent,
-                                    ))
-                              ],
+                              ),
                             ),
                           ),
-                          flex: 1,
-                        ),
-                        Expanded(
-                          flex: 5,
-                          child: Container(
-                            margin: EdgeInsets.symmetric(horizontal: 12.w),
-                            child: Column(
-                              children: [
-                                Padding(
-                                  padding:
-                                      EdgeInsets.only(top: 8.h, bottom: 20.h),
-                                  child: CustomStepper(
-                                      steps: 2, currentStep: state.formStep),
-                                ),
-                                Expanded(
-                                  child: Container(
-                                    padding: EdgeInsets.symmetric(
-                                        horizontal: 12.w, vertical: 16.h),
-                                    decoration: BoxDecoration(
-                                      color: lightPrimaryColor,
-                                      gradient: LinearGradient(
-                                          begin: Alignment.topCenter,
-                                          end: Alignment.bottomCenter,
-                                          colors: [
-                                            lightPrimaryColor,
-                                            backgroundColor
-                                          ]),
-                                      borderRadius: BorderRadius.vertical(
-                                          top: Radius.circular(24.w)),
-                                    ),
-                                    child: Column(
-                                      children: [
-                                        Expanded(
-                                            child: chargeFormPages[
-                                                state.formStep]),
-                                        // Spacer(),
-                                        Padding(
+                          Expanded(
+                              flex: 1,
+                              child: Container(
+                                color: Colors.transparent,
+                              ))
+                        ],
+                      ),
+                    ),
+                    flex: 1,
+                  ),
+                  Expanded(
+                    flex: 5,
+                    child: Container(
+                      margin: EdgeInsets.symmetric(horizontal: 12.w),
+                      child: Column(
+                        children: [
+                          if (context.read<ChargesFormCubit>().toCreate)
+                            Padding(
+                              padding: EdgeInsets.only(top: 8.h, bottom: 20.h),
+                              child: CustomStepper(
+                                  steps: 2, currentStep: state.formStep),
+                            ),
+                          Expanded(
+                            child: Container(
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 12.w, vertical: 16.h),
+                              decoration: BoxDecoration(
+                                color: lightPrimaryColor,
+                                gradient: LinearGradient(
+                                    begin: Alignment.topCenter,
+                                    end: Alignment.bottomCenter,
+                                    colors: [
+                                      lightPrimaryColor,
+                                      backgroundColor
+                                    ]),
+                                borderRadius: BorderRadius.vertical(
+                                    top: Radius.circular(24.w)),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  Expanded(
+                                    child: !context
+                                            .read<ChargesFormCubit>()
+                                            .toCreate
+                                        ? SingleChildScrollView(
+                                            child: Column(
+                                              children:
+                                                  chargeFormPages.sublist(0, 2),
+                                            ),
+                                          )
+                                        : chargeFormPages[state.formStep],
+                                  ),
+                                  !context.read<ChargesFormCubit>().toCreate
+                                      ? CustomFilledButton(
+                                          label: "UPDATE",
+                                          onPressed: () {
+                                            context
+                                                .read<ChargesFormCubit>()
+                                                .updateCharge();
+                                          },
+                                        )
+                                      : Padding(
                                           padding: EdgeInsets.all(12.w),
                                           child: Row(
                                             crossAxisAlignment:
@@ -208,22 +238,19 @@ class ChargesFormView extends StatelessWidget {
                                             ],
                                           ),
                                         ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
-                            color: Colors.transparent,
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
+                      color: Colors.transparent,
                     ),
-                  );
-                },
-              );
-            },
-          ),
+                  ),
+                ],
+              ),
+            );
+          },
         ),
       ),
     );

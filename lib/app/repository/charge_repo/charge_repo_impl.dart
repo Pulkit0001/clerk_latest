@@ -5,6 +5,8 @@ import 'package:dartz/dartz.dart';
 
 import '../../data/services/cloud_firestore_services/candidates_service.dart';
 import '../../data/services/cloud_firestore_services/groups_service.dart';
+import '../../utils/enums/payment_interval_enums.dart';
+import '../../utils/enums/payment_type.dart';
 
 class ChargesRepoImpl extends ChargeRepo {
   final ChargesService chargesService;
@@ -35,9 +37,10 @@ class ChargesRepoImpl extends ChargeRepo {
 
   @override
   Future<Either<List<Charge>, String>> getAllCharges(
-      {required List<String>? chargeIds}) async {
+      {required List<String>? chargeIds, List<String>? excludeCharges,  PaymentType? type,
+        PaymentInterval? interval}) async {
     try {
-      var res = await chargesService.getCharges(chargesId: chargeIds);
+      var res = await chargesService.getCharges(chargesId: chargeIds, type: type, interval: interval, excludeCharges: excludeCharges);
       return Left(res);
     } catch (e) {
       return Right(e.toString());

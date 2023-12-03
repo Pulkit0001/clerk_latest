@@ -50,7 +50,7 @@ class ChargeGridTile extends StatelessWidget {
                                 // : Colors.transparent
                         ),
                         width: double.infinity,
-                        padding: EdgeInsets.symmetric(horizontal: 10.w),
+                        padding: EdgeInsets.symmetric(horizontal: 6.w),
                         decoration: BoxDecoration(
                           color: primaryColor,
                         ),
@@ -60,21 +60,20 @@ class ChargeGridTile extends StatelessWidget {
                               flex: 1,
                             ),
                             Expanded(
-                              flex: 2,
+                              flex: 3,
                               child: Column(
                                 children: [
-                                  Spacer(flex: 10,),
-                                  Text(charge.name,   maxLines: 1 , style: GoogleFonts.poppins(
+                                  Spacer(flex: 1,),
+                                  Text(charge.name,   maxLines: 2 ,textAlign: TextAlign.center, style: GoogleFonts.poppins(
                                     color: backgroundColor,
-                                    fontSize: 16.sp,
-
+                                    fontSize: 14.sp,
                                     fontWeight: FontWeight.w500,
                                     letterSpacing: 0,
                                     height: 1.25
                                   ),),
                                   Text("( ${charge.interval.label ?? charge.paymentType.label} )", style: GoogleFonts.kadwa(
                                     color:backgroundColor,
-                                    fontSize: 14.sp,
+                                    fontSize: 12.sp,
                                     height: 1.5,
                                     fontWeight: FontWeight.w500,
                                     letterSpacing: 0,
@@ -85,7 +84,7 @@ class ChargeGridTile extends StatelessWidget {
                                       selected ? Icon(Icons.check_circle, color: backgroundColor,) : SizedBox(),
                                     ],
                                   ),
-                                  Spacer(flex: 20,),
+                                  Spacer(flex: 1,),
 
                                 ],
                               ),

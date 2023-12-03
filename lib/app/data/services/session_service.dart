@@ -1,12 +1,7 @@
-
 import 'package:clerk/app/data/models/user_profile_data_model.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class Session {
-
-
-
-
   UserCredential? userCredential;
 
   UserProfile? userProfile;
@@ -20,14 +15,12 @@ class Session {
     this.userCredential = userCredential;
   }
 
-  saveUserProfile(UserProfile userProfile){
+  saveUserProfile(UserProfile userProfile) {
     this.userProfile = userProfile;
   }
 
   Future<void> clearSession() async {
-
     userCredential = null;
     currentUser = null;
   }
 }
-

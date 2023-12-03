@@ -10,7 +10,7 @@ export class ClerkEngine {
     private candidateService: CandidateService,
     private chargesService: ChargeService,
     private invoiceService: InovieService
-  ) {}
+  ) { }
 
   async generateInvoice(candidateId: string, userId: string): Promise<string> {
     try {
@@ -23,7 +23,6 @@ export class ClerkEngine {
         billableCharges.map((e) => e.data()["charge_id"])
       );
       var data = this._generateInvoiceData(charges.map((e) => e.data()));
- 
 
       var invoiceId = await this.invoiceService.createInvoice(userId, data);
 
@@ -37,25 +36,28 @@ export class ClerkEngine {
 
       var minDate = Date.now() + 17520 * 60 * 60 * 1000000;
       chargesData.forEach((e) => {
-        if (e.next_billing_date.seconds <= Timestamp.fromMillis(minDate)) {
-          minDate = e.next_billing_date;
+        
+       console.log( e.next_billing_date.seconds, "Charge Next Billing Date");
+       console.log( Timestamp.fromMillis(minDate).seconds, "Min date");
+        if (e.next_billing_date.seconds <= Timestamp.fromMillis(minDate).seconds) {
+          minDate = e.next_billing_date.seconds;
         }
       });
-
-
+      console.log(Timestamp.fromMillis(minDate * 1000), "Final Mon date");
       var isIssued = await this.issueInvoice(
         userId,
         invoiceId,
         candidateId,
-        minDate
+        Timestamp.fromMillis(minDate * 1000)
       );
       if (isIssued) {
-        await this.notifyPayer(userId, invoiceId, candidateId)
+        await this.notifyPayer(userId, invoiceId, candidateId);
         return invoiceId;
       } else {
         throw Error("Can't generate Invoice");
       }
     } catch (error) {
+      console.log(error, "In Generate Invoice Method.............................................");
       throw error;
     }
   }
@@ -133,7 +135,7 @@ export class ClerkEngine {
     userId: string,
     invoiceId: string,
     candidateId: string,
-    nextBillingDate: number
+    nextBillingDate: Timestamp
   ): Promise<boolean> {
     try {
       var data = {
@@ -147,7 +149,8 @@ export class ClerkEngine {
       await this.candidateService.updateCandidateBillingDate(
         candidateId,
         userId,
-        Timestamp.fromMillis(nextBillingDate * 1000)
+       nextBillingDate,
+        invoiceId
       );
       return true;
     } catch (e) {
@@ -164,6 +167,7 @@ export class ClerkEngine {
     try {
       var data = {
         invoiceStatus: "pending",
+        lastNotifiedAt: Timestamp.now()
       };
       /// Update last notified at
       await this.candidateService.updateCandidateNotifyDate(
@@ -179,25 +183,26 @@ export class ClerkEngine {
     }
   }
 
-    private _generateInvoiceData(charges: Array<firestore.DocumentData>) {
-      var totalSum = 0;
-      var items = Array<any>();
-      charges.forEach((element) => {
-        totalSum = totalSum + element.charge_amount;
-        var item = {
-          chargeName: element.charge_name,
-          chargeDescription: element.charge_description_key,
-          chargeAmount: element.charge_amount,
-          chargedAt: Timestamp.now(),
-        };
-        items.push(item);
-      });
-      return {
-        totalAmount: totalSum,
-        invoiceStatus: "created",
-        dueDate: Timestamp.fromMillis(Date.now() + 259200000),
-        status: "disabled",
-        invoiceItems: items,
+  private _generateInvoiceData(charges: Array<firestore.DocumentData>) {
+    var totalSum = 0;
+    var items = Array<any>();
+    charges.forEach((element) => {
+      totalSum = totalSum + element.charge_amount;
+      var item = {
+        chargeName: element.charge_name,
+        chargeDescription: element.charge_description_key,
+        chargeAmount: element.charge_amount,
+        chargedAt: Timestamp.now(),
       };
-    }
+      items.push(item);
+    });
+    return {
+      totalAmount: totalSum,
+      invoiceStatus: "created",
+      dueDate: Timestamp.fromMillis(Date.now() + 259200000),
+      status: "disabled",
+      invoiceItems: items,
+      createdAt: Timestamp.now()
+    };
+  }
 }

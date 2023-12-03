@@ -3,6 +3,7 @@ part of 'app_cubit.dart';
 enum EAppState {
   loggedIn,
   loggedOut,
+  pendingAccount,
   notDetermined,
 }
 
@@ -22,6 +23,7 @@ extension EAppStateHelper on EAppState {
   T when<T>({
     required T Function() loggedIn,
     required T Function() loggedOut,
+    required T Function() pendingAccount,
     required T Function() notDetermined,
   }) {
     switch (this) {
@@ -29,6 +31,8 @@ extension EAppStateHelper on EAppState {
         return loggedIn.call();
       case EAppState.loggedOut:
         return loggedOut.call();
+      case EAppState.pendingAccount:
+        return pendingAccount.call();
       case EAppState.notDetermined:
         return notDetermined.call();
       // ignore: no_default_cases
@@ -41,6 +45,7 @@ extension EAppStateHelper on EAppState {
     required T Function() elseMaybe,
     T Function()? loggedIn,
     T Function()? loggedOut,
+    T Function()? pendingAccount,
     T Function()? notDetermined,
   }) {
     switch (this) {
@@ -59,6 +64,12 @@ extension EAppStateHelper on EAppState {
       case EAppState.notDetermined:
         if (notDetermined != null) {
           return notDetermined.call();
+        } else {
+          return elseMaybe();
+        }
+      case EAppState.pendingAccount:
+        if (pendingAccount != null) {
+          return pendingAccount.call();
         } else {
           return elseMaybe();
         }

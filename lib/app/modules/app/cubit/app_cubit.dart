@@ -2,6 +2,7 @@ import 'package:bloc/bloc.dart';
 import 'package:clerk/app/data/models/user_profile_data_model.dart';
 import 'package:clerk/app/repository/auth_repo/auth_repo.dart';
 import 'package:clerk/app/repository/user_profile_repo/user_profile_repo.dart';
+import 'package:clerk/app/utils/enums/profile_status.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 import '../../../data/services/session_service.dart';
@@ -45,7 +46,9 @@ class AppCubit extends Cubit<AppState> {
       await getIt<Session>().saveUserProfile(l);
       emit(
         AppState(
-          estate: EAppState.loggedIn,
+          estate: user.profileStatus == ProfileStatus.completed
+              ? EAppState.loggedIn
+              : EAppState.pendingAccount,
           message: UtilityService.encodeStateMessage('Auto login Success'),
         ),
       );

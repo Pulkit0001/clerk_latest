@@ -23,7 +23,7 @@ class ChargesPricingFormWidget extends StatelessWidget {
       key: cubit.pricingFormState,
       child: SingleChildScrollView(
         child: BlocBuilder<ChargesFormCubit, ChargeFormState>(
-          builder : (context, state) => Column(
+          builder: (context, state) => Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
@@ -36,7 +36,7 @@ class ChargesPricingFormWidget extends StatelessWidget {
                     letterSpacing: 1),
               ),
               SizedBox(
-                height: 12.h,
+                height: 6.h,
               ),
               Text("  Amount",
                   style: GoogleFonts.nunito(
@@ -50,7 +50,7 @@ class ChargesPricingFormWidget extends StatelessWidget {
                 offset: 50,
               ),
               SizedBox(
-                height: 36.h,
+                height: 20.h,
               ),
               Text("  Payment Type ",
                   style: GoogleFonts.nunito(
@@ -65,25 +65,27 @@ class ChargesPricingFormWidget extends StatelessWidget {
                 primaryColor,
                 backgroundColor,
                 [
-                  Text("One Time",
-                      textAlign: TextAlign.center,
-                      style: GoogleFonts.nunito(
-                        fontSize: 14.sp,
-                        color:
-                            cubit.state.charge.paymentType == PaymentType.oneTime
-                                ? primaryColor
-                                : backgroundColor,
-                        fontWeight: FontWeight.normal,
-                      ),),
+                  Text(
+                    "One Time",
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.nunito(
+                      fontSize: 14.sp,
+                      color:
+                          cubit.state.charge.paymentType == PaymentType.oneTime
+                              ? primaryColor
+                              : backgroundColor,
+                      fontWeight: FontWeight.normal,
+                    ),
+                  ),
                   Text(
                     "Repeating",
                     textAlign: TextAlign.center,
                     style: GoogleFonts.nunito(
                       fontSize: 14.sp,
-                      color:
-                          cubit.state.charge.paymentType == PaymentType.repeating
-                              ? primaryColor
-                              : backgroundColor,
+                      color: cubit.state.charge.paymentType ==
+                              PaymentType.repeating
+                          ? primaryColor
+                          : backgroundColor,
                       fontWeight: FontWeight.normal,
                     ),
                   ),
@@ -140,6 +142,9 @@ class PriceInputWidget extends StatelessWidget {
   final double offset;
   @override
   Widget build(BuildContext context) {
+    InputDecoration decoration =
+        const InputDecoration.collapsed(hintText: '500.00')
+          ..applyDefaults(Theme.of(context).inputDecorationTheme);
     return Container(
       padding: EdgeInsets.zero,
       decoration: BoxDecoration(
@@ -155,7 +160,7 @@ class PriceInputWidget extends StatelessWidget {
                 decrement();
               },
               child: Container(
-                height: 44.h,
+                height: 32.h,
                 decoration: BoxDecoration(
                   color: primaryColor,
                   borderRadius:
@@ -169,35 +174,22 @@ class PriceInputWidget extends StatelessWidget {
             ),
           ),
           Expanded(
-              child: Container(
-                height: 44.h,
-                margin: EdgeInsets.zero,
-                padding: EdgeInsets.zero,
-                child: CustomTextField(
-                  inputType:
-                      const TextInputType.numberWithOptions(decimal: true),
-                  isOutlined: false,
-                  autovalidateMode: AutovalidateMode.always,
-                  validator: (value) {
-                    return validate(value);
-                  },
-
-                  textAlign: TextAlign.center,
-                  inputFormatters: [DecimalTextInputFormatter(decimalRange: 2)],
-                  // onChanged: (value){
-                  //   if(validate(value.trim()) == null) {
-                  //
-                  //     priceStream.sink.add( "Rs. ${controller.text.isEmpty || validate(controller.text) != null ? 0 * tariff : (double.parse(controller.text) * tariff).toStringAsFixed(2)}");
-                  //   }
-                  //
-                  // },
-
-                  maxLength: 6,
-                  controller: controller,
-                  obscure: false,
-                  helperText: '500.00',
-                  leading: null,
-                ),
+              child: TextFormField(
+                autovalidateMode: AutovalidateMode.always,
+                onTapOutside: (event) {
+                  FocusManager.instance.primaryFocus?.unfocus();
+                },
+                validator: (value) {
+                  return validate(value);
+                },
+                textAlign: TextAlign.center,
+                inputFormatters: [
+                  DecimalTextInputFormatter(decimalRange: 2),
+                  LengthLimitingTextInputFormatter(6),
+                ],
+                maxLength: null,
+                controller: controller,
+                decoration: decoration,
               ),
               flex: 2),
           Expanded(
@@ -206,7 +198,7 @@ class PriceInputWidget extends StatelessWidget {
                 increment();
               },
               child: Container(
-                height: 44.h,
+                height: 32.h,
                 decoration: BoxDecoration(
                   color: primaryColor,
                   borderRadius:

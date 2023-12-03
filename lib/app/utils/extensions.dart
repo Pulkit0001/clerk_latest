@@ -171,6 +171,22 @@ extension StringHelper on String? {
     }
   }
 
+  String capitalizeWords() {
+    if (this != null && this!.trim().isNotEmpty) {
+      return this!.trim().split(" ").map((e) => e.replaceRange(0, 1, e.substring(0, 1).toUpperCase())).toList().join(" ");
+    } else {
+      return '';
+    }
+  }
+
+  String capitalizeFirstLetter() {
+    if (this != null && this!.isNotEmpty) {
+      return this!.split(" ").map((e) => e.replaceRange(0, 1, e.substring(0, 1).toUpperCase())).toList().join(" ");
+    } else {
+      return '';
+    }
+  }
+
   bool get isNotNullEmpty => this != null && this!.isNotEmpty;
 
   Option<String> get value {
@@ -329,3 +345,5 @@ extension EnumExtension on Enum {
   K? applyWhen<T, K>(Map<T, K> map, {K? defaultValue}) =>
       map[this] ?? defaultValue;
 }
+
+

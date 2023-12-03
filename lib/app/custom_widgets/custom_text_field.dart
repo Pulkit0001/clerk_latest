@@ -24,6 +24,7 @@ class CustomTextField extends StatelessWidget {
     this.textAlign = TextAlign.start,
     this.inputType = TextInputType.text,
     this.autovalidateMode = AutovalidateMode.disabled,
+    this.textCapitalization = TextCapitalization.sentences,
   }) : super(key: key);
 
   final TextEditingController controller;
@@ -40,6 +41,7 @@ class CustomTextField extends StatelessWidget {
   final int? maxLength;
   final TextInputType inputType;
   final TextAlign textAlign;
+  final TextCapitalization textCapitalization;
   final String? Function(String?)? validator;
   // final void Function(String?)? onChanged;
   final AutovalidateMode autovalidateMode;
@@ -65,6 +67,7 @@ class CustomTextField extends StatelessWidget {
           onTap: !editable ? () => onTrailingTapped!() : null,
           readOnly: !editable,
           textAlign: textAlign,
+          textCapitalization: textCapitalization,
           textAlignVertical: TextAlignVertical.center,
           keyboardType: inputType,
           cursorColor: primaryColor,
@@ -75,13 +78,16 @@ class CustomTextField extends StatelessWidget {
           inputFormatters: inputFormatters,
           maxLength: maxLength ?? 20,
           autovalidateMode: autovalidateMode,
+          onTapOutside: (_){
+            FocusManager.instance.primaryFocus?.unfocus();
+          },
           decoration: InputDecoration(
             counter: Offstage(
               child: SizedBox(
                 height: 0,
               ),
             ),
-            contentPadding: EdgeInsets.all(0),
+            contentPadding: ((leadingWidget ?? leading) == null ) ? EdgeInsets.symmetric(horizontal: 12.w) : EdgeInsets.all(0),
             fillColor: backgroundColor,
             filled: true,
             hintText: helperText,
@@ -127,7 +133,7 @@ class CustomTextField extends StatelessWidget {
             focusedErrorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.all(Radius.circular(12.w)),
               borderSide: BorderSide(
-                  color: Colors.red,
+                  color: primaryColor,
                   width: 1,
                   style: isOutlined ? BorderStyle.solid : BorderStyle.none),
             ),

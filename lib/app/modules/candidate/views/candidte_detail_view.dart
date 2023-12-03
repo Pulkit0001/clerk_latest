@@ -1,22 +1,40 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:clerk/app/custom_widgets/charge_vertical_list_tile_view.dart';
+import 'package:clerk/app/custom_widgets/clerk_shimmers.dart';
 import 'package:clerk/app/custom_widgets/custom_filled_button.dart';
+import 'package:clerk/app/custom_widgets/empty_state_view.dart';
+import 'package:clerk/app/custom_widgets/invoice_status_chip.dart';
+import 'package:clerk/app/data/services/session_service.dart';
 import 'package:clerk/app/modules/candidate/bloc/cubits/candidate_details_cubit.dart';
 import 'package:clerk/app/modules/candidate/bloc/states/candidate_details_state.dart';
+import 'package:clerk/app/modules/candidate/views/change_group_sheet.dart';
+import 'package:clerk/app/modules/candidate/views/manage_extra_charges_sheet.dart';
 import 'package:clerk/app/modules/charge/bloc/cubits/charges_list_cubit.dart';
 import 'package:clerk/app/modules/charge/bloc/states/charge_list_state.dart';
-import 'package:clerk/app/modules/payments/views/invoice_list_view.dart';
+import 'package:clerk/app/modules/group/bloc/cubits/group_details_cubit.dart';
+import 'package:clerk/app/modules/group/bloc/states/group_details_state.dart';
+import 'package:clerk/app/modules/invoices/views/invoices_tab_view.dart';
+import 'package:clerk/app/modules/invoices/widgets/payment_collection_sheet.dart';
 import 'package:clerk/app/modules/profile_tab/views/profile_tab_view.dart';
 import 'package:clerk/app/repository/candidate_repo/candidate_repo.dart';
 import 'package:clerk/app/repository/charge_repo/charge_repo.dart';
+import 'package:clerk/app/repository/group_repo/group_repo.dart';
+import 'package:clerk/app/repository/invoice_repo/invoice_repo.dart';
+import 'package:clerk/app/services/utility_service.dart';
 import 'package:clerk/app/utils/enums/invoice_status.dart';
+import 'package:clerk/app/utils/enums/view_state_enums.dart';
 import 'package:clerk/app/utils/extensions.dart';
 import 'package:clerk/app/utils/locator.dart';
 import 'package:clerk/app/values/colors.dart';
-import 'package:clerk/main.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
+
+import '../../../../main.dart';
+import '../../../data/models/invoice_data_model.dart';
+import 'candidate_form_page.dart';
 
 class CandidateDetailView extends StatelessWidget {
   const CandidateDetailView({Key? key, required this.id}) : super(key: key);
@@ -37,26 +55,29 @@ class CandidateDetailView extends StatelessWidget {
       create: (context) => CandidateDetailsCubit(
         candidateId: id,
         repo: getIt<CandidateRepo>(),
+        invoiceRepo: getIt<InvoiceRepo>(),
       ),
-      child: Builder(builder: (context) {
-        return BlocBuilder<CandidateDetailsCubit, CandidateDetailsState>(
-            builder: (context, state) {
+      child: Builder(
+        builder: (context) {
           return SafeArea(
             child: Scaffold(
-              body: Column(
-                children: [
-                  buildHeader(state),
-                  buildBody(state),
-                ],
-              ),
+              body: BlocBuilder<CandidateDetailsCubit, CandidateDetailsState>(
+                  builder: (context, state) {
+                return Column(
+                  children: [
+                    buildHeader(state, context),
+                    buildBody(state, context),
+                  ],
+                );
+              }),
             ),
           );
-        });
-      }),
+        },
+      ),
     );
   }
 
-  Widget buildBody(CandidateDetailsState state) {
+  Widget buildBody(CandidateDetailsState state, BuildContext context) {
     return Expanded(
       child: Container(
         child: Column(
@@ -64,37 +85,131 @@ class CandidateDetailView extends StatelessWidget {
             SizedBox(
               height: 12.w,
             ),
-            ProfileListItem(
-                onPressed: () {},
-                title: "Pending Invoice",
-                icon: Icons.monetization_on_rounded),
-            buildGroupTile(),
-            ProfileListItem(
-                onPressed: () {
-                  navigatorKey.currentState?.push(
-                    InvoiceListView.getRoute(
-                      candidateIds: [state.candidateId],
-                      status: [InvoiceStatus.paid, InvoiceStatus.cancelled],
-                    ),
-                  );
-                },
-                title: "All Invoices",
-                icon: Icons.monetization_on_rounded),
-            BlocProvider<ChargesListCubit>(
-              create: (context) => ChargesListCubit(
-                repo: getIt<ChargeRepo>(),
-                charges: state.candidate?.extraCharges,
-              ),
-              child: Builder(builder: (context) {
-                return BlocBuilder<ChargesListCubit, ChargesListState>(
-                  builder: (context, state) => ListView.builder(
-                    itemBuilder: (context, index) => ChargeVerticalListTile(
-                      charge: state.charges[index],
+            state.viewState == ViewState.idle
+                ? ProfileListItem(
+                    onPressed: () {},
+                    title: "Pending Invoice",
+                    icon: Icons.monetization_on_rounded)
+                : ClerkShimmers.buildListShimmer(
+                    height: 56, listItemsLength: 1),
+            buildGroupTile(state, context),
+            state.viewState == ViewState.idle
+                ? ProfileListItem(
+                    onPressed: () {
+                      navigatorKey.currentState?.push(
+                        InvoiceTabView.getRoute(
+                          candidateIds: [state.candidateId],
+                          status: [InvoiceStatus.paid, InvoiceStatus.cancelled],
+                        ),
+                      );
+                    },
+                    title: "All Invoices",
+                    icon: Icons.monetization_on_rounded)
+                : ClerkShimmers.buildListShimmer(
+                    height: 56, listItemsLength: 1),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.w),
+              child: Row(
+                children: [
+                  Text(
+                    'Extra Charges',
+                    style: GoogleFonts.nunito(
+                      color: primaryColor,
+                      fontSize: 18.sp,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
-                );
-              }),
+                  Spacer(),
+                  if (state.viewState == ViewState.idle &&
+                      (state.candidate?.extraCharges).isNotNullEmpty)
+                    InkWell(
+                      onTap: () async {
+                        await showModalBottomSheet(
+                            context: context,
+                            isScrollControlled: true,
+                            builder: (_) => Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 12.w),
+                                child: ManageExtraChargeSheet.getWidget(
+                                    state.candidate!)),
+                            backgroundColor: Colors.transparent);
+                        context.read<CandidateDetailsCubit>().loadCandidate();
+                      },
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(
+                            vertical: 8.h, horizontal: 8.w),
+                        child: Row(
+                          children: [
+                            Text(
+                              'Manage',
+                              style: GoogleFonts.nunito(
+                                  color: primaryColor,
+                                  fontSize: 18.sp,
+                                  fontWeight: FontWeight.w600,
+                                  fontStyle: FontStyle.italic),
+                            ),
+                            Icon(
+                              Icons.arrow_forward_ios_rounded,
+                              color: primaryColor,
+                              size: 18.sp,
+                            )
+                          ],
+                        ),
+                      ),
+                    ),
+                ],
+              ),
             ),
+            if (state.viewState == ViewState.idle &&
+                (state.candidate?.extraCharges).isNotNullEmpty)
+              Expanded(
+                child: BlocProvider<ChargesListCubit>(
+                  create: (context) => ChargesListCubit(
+                    repo: getIt<ChargeRepo>(),
+                    charges: state.candidate?.extraCharges,
+                  ),
+                  child: Builder(builder: (context) {
+                    return BlocBuilder<ChargesListCubit, ChargesListState>(
+                      builder: (context, state) => ListView.separated(
+                        physics: NeverScrollableScrollPhysics(),
+                        padding: EdgeInsets.symmetric(
+                            horizontal: 12.w, vertical: 8.h),
+                        itemCount: state.charges.length,
+                        itemBuilder: (context, index) => ChargeVerticalListTile(
+                          charge: state.charges[index],
+                        ),
+                        separatorBuilder: (context, index) => SizedBox(
+                          height: 6.h,
+                        ),
+                      ),
+                    );
+                  }),
+                ),
+              )
+            else if (state.viewState == ViewState.loading)
+              Expanded(child: ClerkShimmers.buildListShimmer(height: 56, listItemsLength: 4))
+            else
+              Expanded(
+                child: EmptyStateWidget(
+                  image: '',
+                  imageHeight: 56.h,
+                  actionBtnLabel: "Let's Add",
+                  message: "You haven't added any\n extra charges.",
+                  onActionPressed: () async {
+                    await showModalBottomSheet(
+                      context: context,
+                      isScrollControlled: true,
+                      builder: (_) => Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 12.w),
+                        child: ManageExtraChargeSheet.getWidget(
+                          state.candidate!,
+                        ),
+                      ),
+                      backgroundColor: Colors.transparent,
+                    );
+                    context.read<CandidateDetailsCubit>().loadCandidate();
+                  },
+                ),
+              )
           ],
         ),
       ),
@@ -102,59 +217,85 @@ class CandidateDetailView extends StatelessWidget {
     );
   }
 
-  Widget buildGroupTile() {
-    return Expanded(
-      flex: 3,
-      child: Card(
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(Radius.circular(18.w))),
-        elevation: 8,
-        shadowColor: backgroundColor,
-        margin: EdgeInsets.symmetric(horizontal: 18.w, vertical: 12.w),
-        child: Container(
-          child: Row(
-            children: [
-              SizedBox(
-                width: 18.w,
-              ),
-              Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "B.Tech",
-                    style: GoogleFonts.nunito(
-                      fontSize: 20.sp,
+  Widget buildGroupTile(CandidateDetailsState state, BuildContext context) {
+    return state.viewState == ViewState.idle
+        ? BlocProvider<GroupDetailsCubit>(
+            create: (_) => GroupDetailsCubit(
+              groupId: state.candidate!.group,
+              repo: getIt<GroupRepo>(),
+              candidateRepo: getIt<CandidateRepo>(),
+              chargeRepo: getIt<ChargeRepo>(),
+              invoiceRepo: getIt<InvoiceRepo>(),
+            ),
+            child: BlocBuilder<GroupDetailsCubit, GroupDetailsState>(
+                builder: (context, groupState) {
+              return Container(
+                margin: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.w),
+                padding: EdgeInsets.symmetric(horizontal: 0.w, vertical: 12.w),
+                decoration: BoxDecoration(
+                    borderRadius: BorderRadius.all(Radius.circular(12.w)),
+                    color: Colors.white,
+                    boxShadow: [
+                      BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          offset: Offset(4, 4),
+                          blurRadius: 10)
+                    ]),
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: 18.w,
                     ),
-                  ),
-                  Text(
-                    "10:00 AM - 4:00 PM",
-                    style: GoogleFonts.nunito(
-                      fontSize: 14.sp,
+                    Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          groupState.group?.name ?? '',
+                          style: GoogleFonts.nunito(
+                            fontSize: 20.sp,
+                          ),
+                        ),
+                        if (groupState.group?.startTime != null &&
+                            groupState.group?.endTime != null)
+                          Text(
+                            "${groupState.group!.startTime} - ${groupState.group!.endTime}",
+                            style: GoogleFonts.nunito(
+                              fontSize: 14.sp,
+                            ),
+                          ),
+                      ],
                     ),
-                  ),
-                ],
-              ),
-              Spacer(),
-              CustomFilledButton(
-                elevation: 2,
-                verticalPadding: 2.h,
-                label: "Change",
-                onPressed: () {},
-                circularRadius: 22.h,
-                textSize: 14.sp,
-              ),
-              SizedBox(
-                width: 12.w,
-              )
-            ],
-          ),
-        ),
-      ),
-    );
+                    Spacer(),
+                    CustomFilledButton(
+                      elevation: 2,
+                      verticalPadding: 2.h,
+                      label: "Change",
+                      onPressed: () async {
+                        await showModalBottomSheet(
+                            context: context,
+                            isScrollControlled: true,
+                            builder: (_) => Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 12.w),
+                                child: ChangeGroupSheet.getWidget(
+                                    state.candidate!)),
+                            backgroundColor: Colors.transparent);
+                      },
+                      circularRadius: 22.h,
+                      textSize: 14.sp,
+                    ),
+                    SizedBox(
+                      width: 12.w,
+                    )
+                  ],
+                ),
+              );
+            }),
+          )
+        : ClerkShimmers.buildListShimmer(height: 96, listItemsLength: 1);
   }
 
-  Widget buildHeader(CandidateDetailsState state) {
+  Widget buildHeader(CandidateDetailsState state, BuildContext context) {
     return Expanded(
       child: Container(
         child: Stack(
@@ -172,69 +313,129 @@ class CandidateDetailView extends StatelessWidget {
                 Spacer(
                   flex: 1,
                 ),
-                buildCandidateCard(state),
+                buildCandidateCard(state, context),
               ],
             ),
           ],
         ),
       ),
-      flex: 3,
+      flex: state.viewState == ViewState.loading
+          ? 3
+          : (state.pendingInvoice == null ? 2 : 3),
     );
   }
 
-  Widget buildCandidateCard(CandidateDetailsState state) {
+  Widget buildCandidateCard(CandidateDetailsState state, BuildContext context) {
     return Expanded(
-      child: Card(
+      child: Container(
         margin: EdgeInsets.symmetric(horizontal: 16.w),
-        elevation: 8,
-        shadowColor: primaryColor,
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(Radius.circular(18.w))),
-        child: Container(
-          padding: EdgeInsets.all(12.w),
-          decoration: BoxDecoration(
-              color: backgroundColor,
-              borderRadius: BorderRadius.all(Radius.circular(18.w))),
-          child: Column(
-            children: [
-              Expanded(
-                flex: 3,
-                child: Padding(
-                  padding: EdgeInsets.only(bottom: 8.w),
-                  child: Row(
-                    children: [
-                      buildCandidateDPView(state.candidate?.profilePic),
-                      SizedBox(
-                        width: 4.w,
-                      ),
+        padding: EdgeInsets.all(12.w),
+        decoration: BoxDecoration(
+          color: backgroundColor,
+          boxShadow: [
+            BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                offset: Offset(4, 4),
+                blurRadius: 10)
+          ],
+          borderRadius: BorderRadius.all(
+            Radius.circular(
+              12.w,
+            ),
+          ),
+        ),
+        child: Column(
+          children: [
+            Expanded(
+              flex: 3,
+              child: Padding(
+                padding: EdgeInsets.only(bottom: 8.w),
+                child: Row(
+                  children: [
+                    if (state.viewState == ViewState.loading)
                       Expanded(
-                          child: Container(
-                            margin: EdgeInsets.all(4.w),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Expanded(
-                                  child: Container(
-                                    padding: EdgeInsets.only(left: 12.w),
-                                    child: Row(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Expanded(
-                                          flex: 8,
-                                          child: Padding(
-                                            padding: EdgeInsets.only(top: 12.w),
-                                            child: Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
+                        child: LayoutBuilder(builder: (context, constraints) {
+                          return ClerkShimmers.buildListShimmer(
+                            height: constraints.maxWidth,
+                            margin: EdgeInsets.zero,
+                            listItemsLength: 1
+                          );
+                        }),
+                      )
+                    else
+                      buildCandidateDPView(state.candidate?.profilePic),
+                    SizedBox(
+                      width: 4.w,
+                    ),
+                    Expanded(
+                        child: Container(
+                          margin: EdgeInsets.all(4.w),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: Container(
+                                  padding: EdgeInsets.only(left: 12.w),
+                                  child: Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Expanded(
+                                        child: Padding(
+                                          padding: EdgeInsets.only(top: 12),
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              if (state.viewState ==
+                                                  ViewState.loading)
+                                                Row(
+                                                  children: [
+                                                    Expanded(
+                                                      flex: 2,
+                                                      child: ClerkShimmers
+                                                          .buildListShimmer(
+                                                              height: 16.sp,
+                                                              margin: EdgeInsets
+                                                                  .zero,
+                                                              listItemsLength:
+                                                                  1),
+                                                    ),
+                                                    Text(
+                                                      ",",
+                                                      style: GoogleFonts.nunito(
+                                                          fontSize: 16.sp,
+                                                          height: 1.2,
+                                                          color:
+                                                              Colors.blueGrey,
+                                                          letterSpacing: 1.5,
+                                                          fontWeight:
+                                                              FontWeight.bold),
+                                                    ),
+                                                    Expanded(
+                                                      flex: 1,
+                                                      child: ClerkShimmers
+                                                          .buildListShimmer(
+                                                              margin: EdgeInsets
+                                                                  .zero,
+                                                              height: 16.sp,
+                                                              listItemsLength:
+                                                                  1),
+                                                    ),
+                                                  ],
+                                                )
+                                              else
                                                 Row(
                                                   children: [
                                                     Flexible(
+                                                      fit: FlexFit.tight,
                                                       child: Text(
-                                                        "Pulkit Garg",
+                                                        state.candidate?.name
+                                                                .replaceAll("",
+                                                                    "\u{200B}") ??
+                                                            "",
                                                         overflow: TextOverflow
-                                                            .ellipsis,
+                                                            .visible,
                                                         softWrap: true,
                                                         maxLines: 1,
                                                         style:
@@ -251,7 +452,7 @@ class CandidateDetailView extends StatelessWidget {
                                                       ),
                                                     ),
                                                     Text(
-                                                      ", 21   ",
+                                                      ", ${state.candidate?.age ?? ""}   ",
                                                       overflow:
                                                           TextOverflow.ellipsis,
                                                       softWrap: true,
@@ -267,59 +468,86 @@ class CandidateDetailView extends StatelessWidget {
                                                     ),
                                                   ],
                                                 ),
+                                              if (state.viewState ==
+                                                  ViewState.loading)
+                                                SizedBox(
+                                                  width: 72,
+                                                  child: ClerkShimmers
+                                                      .buildListShimmer(
+                                                    height: 12.sp,
+                                                    margin: EdgeInsets.only(
+                                                        top: 4.0),
+                                                    listItemsLength: 1,
+                                                  ),
+                                                )
+                                              else
                                                 Text(
-                                                  "Anita Rani",
-                                                  style: GoogleFonts.nunito(
-                                                      fontSize: 14.sp,
-                                                      height: 1.2,
-                                                      color: Colors.blueGrey,
-                                                      fontWeight:
-                                                          FontWeight.w400,
-                                                      letterSpacing: 1.2),
-                                                ),
-                                                Text(
-                                                  "Naraingarh, Ambala",
+                                                  state.candidate?.address ??
+                                                      "",
                                                   style: GoogleFonts.nunito(
                                                     fontSize: 12.sp,
                                                     height: 1.2,
                                                     color: Colors.blueGrey,
                                                   ),
                                                 ),
-                                              ],
-                                            ),
+                                            ],
                                           ),
                                         ),
-                                        Expanded(
-                                          child: Icon(
-                                            Icons.edit,
-                                            color: primaryColor,
-                                            size: 24.w,
-                                          ),
-                                        )
-                                      ],
-                                    ),
+                                      ),
+                                      InkWell(
+                                        onTap: () {
+                                          Navigator.of(context).push(
+                                              CandidateFormPage.getRoute(
+                                                  candidate: state.candidate));
+                                        },
+                                        child: Icon(
+                                          Icons.edit,
+                                          color: primaryColor,
+                                          size: 24.w,
+                                        ),
+                                      )
+                                    ],
                                   ),
-                                  flex: 3,
                                 ),
-                                buildPaymentStatusChip(),
-                              ],
-                            ),
+                                flex: 3,
+                              ),
+                              if (state.viewState == ViewState.loading)
+                                ClerkShimmers.buildListShimmer(
+                                    height: 32,
+                                    listItemsLength: 1,
+                                    margin:
+                                        EdgeInsets.symmetric(horizontal: 24))
+                              else
+                                buildPaymentStatusChip(
+                                  state.pendingInvoice?.invoiceStatus ??
+                                      InvoiceStatus.paid,
+                                  state.pendingInvoice?.dueDate,
+                                ),
+                            ],
                           ),
-                          flex: 2),
-                    ],
-                  ),
+                        ),
+                        flex: 2),
+                  ],
                 ),
               ),
-              buildCandidateCardActions(),
-            ],
-          ),
+            ),
+            if (state.viewState == ViewState.loading &&
+                state.pendingInvoice == null)
+              ClerkShimmers.buildGridShimmer(
+                height: 48,
+                itemsLength: 4,
+                crossAxisCount: 4,
+              ),
+            if (state.pendingInvoice != null)
+              buildCandidateCardActions(state.pendingInvoice!, context),
+          ],
         ),
       ),
-      flex: 5,
+      flex: state.pendingInvoice == null ? 4 : 5,
     );
   }
 
-  Widget buildCandidateCardActions() {
+  Widget buildCandidateCardActions(Invoice invoice, BuildContext context) {
     return Expanded(
       flex: 1,
       child: Padding(
@@ -330,13 +558,31 @@ class CandidateDetailView extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             buildSingleCandidateAction(
-                icon: Icons.phone_rounded, onPressed: () {}),
+                icon: Icons.phone_rounded,
+                onPressed: () {
+                  UtilityService.launchPhoneIntent(invoice);
+                }),
             buildSingleCandidateAction(
-                icon: Icons.message_rounded, onPressed: () {}),
+                icon: Icons.message_rounded,
+                onPressed: () {
+                  UtilityService.launchSMSIntent(
+                      invoice, getIt<Session>().userProfile!);
+                }),
             buildSingleCandidateAction(
-                icon: Icons.warning_rounded, onPressed: () {}),
+                icon: Icons.mail,
+                onPressed: () {
+                  UtilityService.launchMailIntent(
+                      invoice, getIt<Session>().userProfile!);
+                }),
             buildSingleCandidateAction(
-                icon: Icons.monetization_on_rounded, onPressed: () {}),
+                icon: Icons.monetization_on_rounded,
+                onPressed: () {
+                  showBottomSheet(
+                    backgroundColor: Colors.transparent,
+                    context: context,
+                    builder: (_) => PaymentCollectionSheet.getWidget(invoice),
+                  );
+                }),
           ],
         ),
       ),
@@ -345,87 +591,50 @@ class CandidateDetailView extends StatelessWidget {
 
   Widget buildSingleCandidateAction(
       {required IconData icon, required Function() onPressed}) {
-    return FloatingActionButton(
-      elevation: 2,
-      backgroundColor: backgroundColor,
-      onPressed: onPressed,
-      child: Icon(
-        icon,
-        color: primaryColor,
+    return InkWell(
+      onTap: onPressed,
+      child: Container(
+        height: 56.w,
+        width: 56.w,
+        decoration: BoxDecoration(
+            color: backgroundColor,
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  offset: Offset(4, 4),
+                  blurRadius: 10)
+            ]),
+        child: Icon(
+          icon,
+          color: primaryColor,
+        ),
       ),
     );
   }
 
   Widget buildCandidateDPView(String? profilePic) {
     return Expanded(
-        child: Container(
-          clipBehavior: Clip.hardEdge,
-          height: double.infinity,
-          margin: EdgeInsets.symmetric(horizontal: 4.w, vertical: 4.w),
-          decoration: BoxDecoration(
-              color: lightPrimaryColor.withOpacity(0.5),
-              border: Border.all(),
-              borderRadius: BorderRadius.all(Radius.circular(12.w))),
-          child: Stack(
-            children: [
-              profilePic.isNotNullEmpty
-                  ? Image.network(
-                      profilePic!,
-                      fit: BoxFit.cover,
-                    )
-                  : Icon(
-                      Icons.person,
-                      size: 85.h,
-                      color: backgroundColor,
-                    ),
-              Column(
-                children: [
-                  Spacer(
-                    flex: 3,
-                  ),
-                  Expanded(
-                      flex: 2,
-                      child: Container(
-                        padding: EdgeInsets.only(bottom: 6.w),
-                        decoration: BoxDecoration(
-                            // color: Colors.black.withOpacity(0.4),
-                            gradient: LinearGradient(
-                                begin: Alignment.bottomCenter,
-                                end: Alignment.topCenter,
-                                colors: [
-                              Colors.black.withOpacity(0.5),
-                              Colors.transparent
-                            ])),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.max,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Text(
-                              "EDIT",
-                              style: GoogleFonts.poppins(
-                                  color: backgroundColor,
-                                  fontSize: 13.sp,
-                                  letterSpacing: 2,
-                                  fontWeight: FontWeight.w600),
-                            ),
-                            SizedBox(
-                              width: 8.w,
-                            ),
-                            Icon(
-                              Icons.edit,
-                              color: backgroundColor,
-                              size: 16.w,
-                            )
-                          ],
-                        ),
-                      ))
-                ],
-              )
-            ],
-          ),
-        ),
-        flex: 1);
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          return Container(
+            height: constraints.maxWidth,
+            clipBehavior: Clip.hardEdge,
+            margin: EdgeInsets.symmetric(horizontal: 4.w, vertical: 4.w),
+            decoration: BoxDecoration(
+                color: lightPrimaryColor.withOpacity(0.5),
+                borderRadius: BorderRadius.all(Radius.circular(12.w))),
+            child: CachedNetworkImage(
+              imageUrl: profilePic ?? "",
+              height: constraints.maxWidth,
+              fit: BoxFit.cover,
+              errorWidget: (a, b, c) => Image.asset('assets/images/avator.png'),
+            ),
+          );
+        },
+      ),
+      flex: 1,
+    );
   }
 
   Widget buildBackdrop() {
@@ -440,43 +649,12 @@ class CandidateDetailView extends StatelessWidget {
     );
   }
 
-  Widget buildPaymentStatusChip() {
+  Widget buildPaymentStatusChip(InvoiceStatus invoiceStatus,
+      [DateTime? dueDate]) {
     return Expanded(
-      child: Card(
-        elevation: 0,
-        shadowColor: Colors.green,
-        margin: EdgeInsets.symmetric(
-          horizontal: 30.w,
-        ),
-        color: Colors.green.withOpacity(0.3),
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(Radius.circular(8.w))),
-        child: Container(
-          alignment: Alignment.center,
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                "RECEIVED",
-                textAlign: TextAlign.center,
-                style: GoogleFonts.poppins(
-                    color: Colors.green,
-                    letterSpacing: 1,
-                    fontSize: 12.sp,
-                    fontWeight: FontWeight.w500),
-              ),
-              SizedBox(
-                width: 6.w,
-              ),
-              Icon(
-                Icons.fact_check,
-                color: Colors.green,
-                size: 14.w,
-              )
-            ],
-          ),
-        ),
+      child: InvoiceStatusChip(
+        status: invoiceStatus,
+        dueDate: dueDate ?? DateTime.now(),
       ),
       flex: 1,
     );

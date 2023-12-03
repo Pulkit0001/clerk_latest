@@ -1,6 +1,9 @@
 import 'package:clerk/app/data/models/charge_data_model.dart';
 import 'package:clerk/app/data/services/session_service.dart';
 import 'package:clerk/app/utils/custom_exception_handler.dart';
+import 'package:clerk/app/utils/enums/payment_interval_enums.dart';
+import 'package:clerk/app/utils/enums/payment_type.dart';
+import 'package:clerk/app/utils/extensions.dart';
 import 'package:clerk/app/values/strings.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -26,7 +29,11 @@ class ChargesService {
     }
   }
 
-  Future<List<Charge>> getCharges({List<String>? chargesId}) async {
+  Future<List<Charge>> getCharges(
+      {List<String>? chargesId,
+      List<String>? excludeCharges,
+      PaymentType? type,
+      PaymentInterval? interval}) async {
     try {
       var id = session.currentUser!.uid;
       final charges = firestore
@@ -34,23 +41,31 @@ class ChargesService {
           .doc(id)
           .collection(CHARGES_COLLECTION);
 
-      final res = (await charges.get());
       Iterable<QueryDocumentSnapshot<Map<String, dynamic>>> chargeDocs;
 
-      if (chargesId != null) {
-        chargeDocs = res.docs.where((element) =>
-            chargesId.contains(element.id) &&
-            element.data()['charge_status'] == 'active');
-      } else {
-        chargeDocs = res.docs;
+      var chargesQuery = charges.where('charge_status', isEqualTo: 'active');
+      if (chargesId.isNotNullEmpty) {
+        chargesQuery =
+            chargesQuery.where(FieldPath.documentId, whereIn: chargesId);
       }
-
+      if (type != null) {
+        chargesQuery =
+            chargesQuery.where('charge_payment_type', isEqualTo: type.name);
+      }
+      if (interval != null) {
+        chargesQuery =
+            chargesQuery.where('charge_interval', isEqualTo: interval.name);
+      }
+      if (excludeCharges.isNotNullEmpty) {
+        chargesQuery = chargesQuery.where(FieldPath.documentId,
+            whereNotIn: excludeCharges ?? []);
+      }
+      chargeDocs = (await chargesQuery.get()).docs;
       List<Charge> chargeList = chargeDocs.map((e) {
         var x = e.data();
         x.addAll({"charge_id": e.id});
         return Charge.fromJson(x);
       }).toList();
-
       return chargeList;
     } on Exception catch (e) {
       CustomExceptionHandler.handle(e);

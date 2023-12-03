@@ -1,5 +1,6 @@
 import 'package:clerk/app/custom_widgets/custom_filled_button.dart';
 import 'package:clerk/app/custom_widgets/custom_stepper.dart';
+import 'package:clerk/app/utils/enums/view_state_enums.dart';
 import 'package:clerk/app/utils/extensions.dart';
 import 'package:clerk/app/utils/locator.dart';
 import 'package:clerk/app/values/colors.dart';
@@ -7,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:loader_overlay/loader_overlay.dart';
 
 import '../../../data/models/user_profile_data_model.dart';
 import '../../../repository/user_profile_repo/user_profile_repo.dart';
@@ -14,7 +16,6 @@ import '../bloc/cubits/profile_form_cubit.dart';
 import '../bloc/states/profile_form_state.dart';
 
 class UserProfileFormPage extends StatelessWidget {
-
   static Route<dynamic> getRoute(
       {UserProfile? profile, int initialFormStep = 0}) {
     return MaterialPageRoute(
@@ -28,6 +29,16 @@ class UserProfileFormPage extends StatelessWidget {
     );
   }
 
+  static Widget widget({UserProfile? profile, int initialFormStep = 0}) {
+    return BlocProvider<UserProfileFormCubit>(
+      create: (context) => UserProfileFormCubit(
+          repo: getIt<UserProfileRepo>(),
+          profile: profile,
+          initialFormStep: initialFormStep),
+      child: UserProfileFormPage(),
+    );
+  }
+
   final int nbSteps = 2;
   @override
   Widget build(BuildContext context) {
@@ -35,8 +46,14 @@ class UserProfileFormPage extends StatelessWidget {
     return SafeArea(
       child: Scaffold(
         backgroundColor: backgroundColor,
-        resizeToAvoidBottomInset: false,
-        body: BlocBuilder<UserProfileFormCubit, UserProfileFormState>(
+        body: BlocConsumer<UserProfileFormCubit, UserProfileFormState>(
+          listener: (context, state) {
+            if (state.formState == CustomFormState.uploading) {
+              context.loaderOverlay.show();
+            } else {
+              context.loaderOverlay.hide();
+            }
+          },
           builder: (context, state) {
             return Container(
               child: Column(

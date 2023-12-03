@@ -1,8 +1,6 @@
-import 'package:clerk/app/data/models/charge_data_model.dart';
-import 'package:clerk/app/modules/candidate/bloc/states/candidate_details_state.dart';
-import 'package:clerk/app/repository/charge_repo/charge_repo.dart';
-import 'package:clerk/app/repository/candidate_repo/candidate_repo.dart';
+import 'package:clerk/app/data/services/session_service.dart';
 import 'package:clerk/app/utils/enums/view_state_enums.dart';
+import 'package:clerk/app/utils/locator.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../repository/user_profile_repo/user_profile_repo.dart';
@@ -12,7 +10,13 @@ class UserProfileDetailsCubit extends Cubit<ProfileDetailState> {
   UserProfileDetailsCubit({
     required this.repo,
   }) : super(ProfileDetailState.initial()) {
-    loadUserProfile();
+    if (getIt<Session>().userProfile != null) {
+      emit(state.copyWith(
+          userProfile: getIt<Session>().userProfile!,
+          viewState: ViewState.idle));
+    } else {
+      loadUserProfile();
+    }
   }
 
   final UserProfileRepo repo;
@@ -31,5 +35,4 @@ class UserProfileDetailsCubit extends Cubit<ProfileDetailState> {
           viewState: ViewState.error, errorMessage: e.toString()));
     }
   }
-
 }

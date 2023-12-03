@@ -1,6 +1,10 @@
 import 'package:clerk/app/modules/group/views/group_detail_view.dart';
 import 'package:clerk/app/modules/home/views/home_view.dart';
+import 'package:clerk/app/modules/profile/bloc/cubits/profile_detail_cubit.dart';
 import 'package:clerk/app/modules/profile_tab/views/profile_tab_view.dart';
+import 'package:clerk/app/repository/invoice_repo/invoice_repo.dart';
+import 'package:clerk/app/repository/user_profile_repo/user_profile_repo.dart';
+import 'package:clerk/app/utils/locator.dart';
 import 'package:clerk/app/values/colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -9,24 +13,33 @@ import 'package:motion_tab_bar_v2/motion-tab-bar.dart';
 import '../cubit/dashboard_cubit.dart';
 import '../cubit/dashboard_state.dart';
 
-var tabs = <Widget>[GroupDetailView(), HomeView(), ProfileTabView.getWidget()];
+var tabs = <Widget>[
+  GroupDetailView.getWidget(),
+  HomeView(),
+  ProfileTabView.getWidget()
+];
 
 class DashboardView extends StatelessWidget {
-
   static Route<dynamic> getRoute() {
     return MaterialPageRoute(
-      builder: (context) => BlocProvider<DashboardCubit>(
-        create: (context) => DashboardCubit(),
-        child: DashboardView(),
-      ),
+      builder: (context) => getWidget(),
     );
   }
 
   static Widget getWidget() {
-    return BlocProvider<DashboardCubit>(
-        create: (context) => DashboardCubit(),
-        child: DashboardView(),
-      );
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(
+          create: (context) => UserProfileDetailsCubit(
+            repo: getIt<UserProfileRepo>(),
+          ),
+        ),
+        BlocProvider<DashboardCubit>(
+          create: (context) => DashboardCubit(getIt<InvoiceRepo>()),
+        ),
+      ],
+      child: DashboardView(),
+    );
   }
 
   @override

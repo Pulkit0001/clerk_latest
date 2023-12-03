@@ -22,134 +22,142 @@ class SelectChargesView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     var cubit = context.read<GroupsFormCubit>();
-    return Container(child:
-        BlocBuilder<GroupsFormCubit, GroupFormState>(builder: (context, state) {
-      return Column(
-        children: [
-          Text(
-            "Select Charges",
-            style: GoogleFonts.nunito(
-                color: backgroundColor,
-                // color: backgroundColor,
-                fontSize: 18.sp,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 1.2),
-          ),
-          SizedBox(
-            height: 4.h,
-          ),
-          Expanded(
-            child: BlocProvider<ChargesListCubit>(
-              create: (context) => ChargesListCubit(
-                repo: getIt<ChargeRepo>(),
-                charges: null,
+    return Container(
+      child: BlocBuilder<GroupsFormCubit, GroupFormState>(
+        builder: (context, state) {
+          return Column(
+            children: [
+              Text(
+                "Select Charges",
+                style: GoogleFonts.nunito(
+                    color: backgroundColor,
+                    // color: backgroundColor,
+                    fontSize: 18.sp,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.2),
               ),
-              child: Builder(builder: (context) {
-                return BlocBuilder<ChargesListCubit, ChargesListState>(
-                  builder: (context, state) {
-                    switch (state.viewState) {
-                      case ViewState.loading:
-                        {
-                          return ClerkProgressIndicator();
-                        }
-                      case ViewState.empty:
-                        {
-                          return EmptyStateWidget(
-                            message:
-                                "Don't you have created \n  any charges yet?",
-                            image: '',
-                            onActionPressed: () async {
-                              await context.navigate
-                                  .push(ChargesFormView.getRoute());
-                              context
-                                  .read<ChargesListCubit>()
-                                  .loadCharges(null);
-                            },
-                          );
-                        }
-                      case ViewState.idle:
-                        {
-                          return Column(
-                            children: [
-                              Row(
-                                children: [
-                                  Spacer(),
-                                  OutlinedButton(
-                                    onPressed: () async {
-                                      await context.navigate
-                                          .push(ChargesFormView.getRoute());
-                                      context
-                                          .read<ChargesListCubit>()
-                                          .loadCharges(null);
-                                    },
-                                    style: ButtonStyle(
-                                      side: MaterialStateProperty.all(
-                                          BorderSide(
-                                              width: 2,
-                                              color: backgroundColor)),
-                                      shape: MaterialStateProperty.all(
-                                          RoundedRectangleBorder(
-                                              borderRadius: BorderRadius.all(
-                                                  Radius.circular(30)))),
-                                    ),
-                                    child: Text(
-                                      "Create New",
-                                      style: GoogleFonts.poppins(
-                                          color: backgroundColor,
-                                          letterSpacing: 1,
-                                          fontWeight: FontWeight.bold),
-                                    ),
-                                  ),
-                                  SizedBox(
-                                    width: 10.w,
-                                  )
-                                ],
-                              ),
-                              SizedBox(
-                                height: 4.h,
-                              ),
-                              Container(
-                                child: GridView.builder(
-                                  shrinkWrap: true,
-                                  itemCount: state.charges.length,
-                                  gridDelegate:
-                                      SliverGridDelegateWithFixedCrossAxisCount(
-                                          crossAxisSpacing: 12.h,
-                                          mainAxisSpacing: 12.w,
-                                          crossAxisCount: 2),
-                                  itemBuilder: (context, index) {
-                                    return ChargeGridTile(
-                                      charge: state.charges[index],
-                                      selected: cubit.state.group.charges
-                                          .contains(state.charges[index].id),
-                                      onPressed: (String value) {
-                                        if (cubit.state.group.charges
-                                            .contains(value)) {
-                                          cubit.removeCharge(value);
-                                        } else {
-                                          cubit.addCharge(value);
-                                        }
-                                      },
-                                    );
+              SizedBox(
+                height: 4.h,
+              ),
+              Expanded(
+                child: BlocProvider<ChargesListCubit>(
+                  create: (context) => ChargesListCubit(
+                    repo: getIt<ChargeRepo>(),
+                    charges: null,
+                  ),
+                  child: Builder(
+                    builder: (context) {
+                      return BlocBuilder<ChargesListCubit, ChargesListState>(
+                        builder: (context, state) {
+                          switch (state.viewState) {
+                            case ViewState.loading:
+                              {
+                                return ClerkProgressIndicator();
+                              }
+                            case ViewState.empty:
+                              {
+                                return EmptyStateWidget(
+                                  message:
+                                      "Don't you have created \n  any charges yet?",
+                                  image: '',
+                                  onActionPressed: () async {
+                                    await context.navigate
+                                        .push(ChargesFormView.getRoute());
+                                    context
+                                        .read<ChargesListCubit>()
+                                        .loadCharges(null);
                                   },
-                                ),
-                              ),
-                            ],
-                          );
-                        }
-                      default:
-                        {
-                          return Container();
-                        }
-                    }
-                  },
-                );
-              }),
-            ),
-          ),
-        ],
-      );
-    }));
+                                );
+                              }
+                            case ViewState.idle:
+                              {
+                                return Column(
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Spacer(),
+                                        OutlinedButton(
+                                          onPressed: () async {
+                                            await context.navigate.push(
+                                                ChargesFormView.getRoute());
+                                            context
+                                                .read<ChargesListCubit>()
+                                                .loadCharges(null);
+                                          },
+                                          style: ButtonStyle(
+                                            side: MaterialStateProperty.all(
+                                                BorderSide(
+                                                    width: 2,
+                                                    color: backgroundColor)),
+                                            shape: MaterialStateProperty.all(
+                                                RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        BorderRadius.all(
+                                                            Radius.circular(
+                                                                30)))),
+                                          ),
+                                          child: Text(
+                                            "Create New",
+                                            style: GoogleFonts.poppins(
+                                                color: backgroundColor,
+                                                letterSpacing: 1,
+                                                fontWeight: FontWeight.bold),
+                                          ),
+                                        ),
+                                        SizedBox(
+                                          width: 10.w,
+                                        )
+                                      ],
+                                    ),
+                                    SizedBox(
+                                      height: 4.h,
+                                    ),
+                                    Expanded(
+                                      child: GridView.builder(
+                                        shrinkWrap: true,
+                                        itemCount: state.charges.length,
+                                        gridDelegate:
+                                            SliverGridDelegateWithFixedCrossAxisCount(
+                                                crossAxisSpacing: 12.h,
+                                                mainAxisSpacing: 12.w,
+                                                crossAxisCount: 2),
+                                        itemBuilder: (context, index) {
+                                          return ChargeGridTile(
+                                            charge: state.charges[index],
+                                            selected: cubit.state.group.charges
+                                                .contains(
+                                                    state.charges[index].id),
+                                            onPressed: (String value) {
+                                              if (cubit.state.group.charges
+                                                  .contains(value)) {
+                                                cubit.removeCharge(value);
+                                              } else {
+                                                cubit.addCharge(value);
+                                              }
+                                            },
+                                          );
+                                        },
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              }
+                            default:
+                              {
+                                return Container();
+                              }
+                          }
+                        },
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
   }
 }
 

@@ -1,24 +1,28 @@
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:clerk/app/custom_widgets/choose_image_source_sheet.dart';
 import 'package:clerk/app/custom_widgets/clerk_dialog.dart';
 import 'package:clerk/app/custom_widgets/others_page.dart';
 import 'package:clerk/app/modules/app/cubit/app_cubit.dart';
-import 'package:clerk/app/modules/payments/views/invoice_list_view.dart';
+import 'package:clerk/app/modules/charge/views/charges_tab_view.dart';
+import 'package:clerk/app/modules/invoices/views/invoices_tab_view.dart';
 import 'package:clerk/app/modules/profile/bloc/cubits/profile_detail_cubit.dart';
+import 'package:clerk/app/modules/profile/bloc/cubits/profile_form_cubit.dart';
 import 'package:clerk/app/modules/profile/bloc/states/profile_detail_state.dart';
+import 'package:clerk/app/modules/profile/bloc/states/profile_form_state.dart';
 import 'package:clerk/app/modules/profile/views/profile_form_view.dart';
 import 'package:clerk/app/repository/user_profile_repo/user_profile_repo.dart';
 import 'package:clerk/app/utils/extensions.dart';
 import 'package:clerk/app/utils/locator.dart';
 import 'package:clerk/app/values/colors.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
 
 class ProfileTabView extends StatelessWidget {
-  static Widget getWidget() => BlocProvider(
-      create: (context) =>
-          UserProfileDetailsCubit(repo: getIt<UserProfileRepo>()),
-      child: ProfileTabView());
+  static Widget getWidget() => ProfileTabView();
 
   @override
   Widget build(BuildContext context) {
@@ -51,6 +55,8 @@ class ProfileTabView extends StatelessWidget {
                                   Expanded(
                                     flex: 14000,
                                     child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.stretch,
                                       children: [
                                         SizedBox(
                                           height: 12.h,
@@ -58,24 +64,34 @@ class ProfileTabView extends StatelessWidget {
                                         Padding(
                                           padding: EdgeInsets.symmetric(
                                               horizontal: 12.w),
-                                          child: Row(
+                                          child: Column(
                                             children: [
-                                              Flexible(
-                                                child: Text(
-                                                  state.userProfile
-                                                          ?.businessName ??
-                                                      "",
-                                                  softWrap: true,
-                                                  maxLines: 2,
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                  textAlign: TextAlign.start,
-                                                  style: GoogleFonts.nunito(
-                                                    color: backgroundColor,
-                                                    letterSpacing: 2,
-                                                    fontSize: 24.sp,
-                                                    // fontStyle: FontStyle.italic
-                                                  ),
+                                              Text(
+                                                state.userProfile?.businessName ??
+                                                    "",
+                                                softWrap: true,
+                                                maxLines: 2,
+                                                overflow: TextOverflow.ellipsis,
+                                                textAlign: TextAlign.center,
+                                                style: GoogleFonts.nunito(
+                                                  color: Colors.white,
+                                                  fontWeight: FontWeight.w700,
+                                                  fontSize: 24,
+                                                  letterSpacing: 1.5,
+                                                ),
+                                              ),
+                                              Text(
+                                                state.userProfile?.businessAddress ??
+                                                    "",
+                                                softWrap: true,
+                                                maxLines: 2,
+                                                overflow: TextOverflow.ellipsis,
+                                                textAlign: TextAlign.center,
+                                                style: GoogleFonts.nunito(
+                                                  color: Colors.white,
+                                                  fontWeight: FontWeight.w500,
+                                                  fontSize: 20,
+                                                  letterSpacing: 1.5,
                                                 ),
                                               ),
                                             ],
@@ -117,20 +133,95 @@ class ProfileTabView extends StatelessWidget {
                     Expanded(
                       child: Padding(
                         padding: EdgeInsets.symmetric(horizontal: 12.w),
-                        child: GestureDetector(
-                          onTap: () {},
-                          child: Container(
-                            padding: EdgeInsets.all(8.h),
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: lightPrimaryColor.withOpacity(0.7),
-                            ),
-                            child: Icon(
-                              Icons.person,
-                              color: backgroundColor,
-                              size: 62.h,
-                            ),
+                        child: BlocProvider(
+                          create: (context) => UserProfileFormCubit(
+                            repo: getIt<UserProfileRepo>(),
+                            profile: state.userProfile,
                           ),
+                          child: Builder(builder: (context) {
+                            return BlocBuilder<UserProfileFormCubit,
+                                    UserProfileFormState>(
+                                builder: (context, state) {
+                              return Stack(
+                                children: [
+                                  GestureDetector(
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color:
+                                            lightPrimaryColor.withOpacity(0.7),
+                                      ),
+                                      clipBehavior: Clip.hardEdge,
+                                      child: context
+                                              .read<UserProfileFormCubit>()
+                                              .isImagePicked
+                                          ? Image.file(
+                                              context
+                                                  .read<UserProfileFormCubit>()
+                                                  .pickedImage!,
+                                              fit: BoxFit.cover,
+                                              height: 72.h,
+                                              width: 72.h,
+                                            )
+                                          : CachedNetworkImage(
+                                              height: 72.h,
+                                              width: 72.h,
+                                              progressIndicatorBuilder:
+                                                  (context, widget, chunk) =>
+                                                      CupertinoActivityIndicator(
+                                                color: primaryColor,
+                                              ),
+                                              errorWidget: (a, b, c) => Icon(
+                                                Icons.person,
+                                                color: backgroundColor,
+                                                size: 62.h,
+                                              ),
+                                              fit: BoxFit.cover,
+                                              imageUrl: state
+                                                  .userProfile.businessLogo,
+                                            ),
+                                    ),
+                                  ),
+                                  Positioned(
+                                    bottom: 4,
+                                    right: 4,
+                                    child: InkWell(
+                                      onTap: () async {
+                                        ImageSource? imgSource =
+                                            await showModalBottomSheet(
+                                          backgroundColor: Colors.transparent,
+                                          context: context,
+                                          builder: (_) => ChooseImageSource(),
+                                        );
+                                        if (imgSource == ImageSource.camera) {
+                                          context
+                                              .read<UserProfileFormCubit>()
+                                              .pickImageFromCamera();
+                                        } else if (imgSource ==
+                                            ImageSource.gallery) {
+                                          context
+                                              .read<UserProfileFormCubit>()
+                                              .pickImageFromGallery();
+                                        }
+                                      },
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          color: primaryColor,
+                                          shape: BoxShape.circle,
+                                        ),
+                                        padding: const EdgeInsets.all(4.0),
+                                        child: Icon(
+                                          Icons.edit,
+                                          color: Colors.white,
+                                          size: 16.sp,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              );
+                            });
+                          }),
                         ),
                       ),
                       flex: 12500,
@@ -142,8 +233,7 @@ class ProfileTabView extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
                             Text(
-                              (state.userProfile?.firstName ?? "") +
-                                  (state.userProfile?.lastName ?? ""),
+                              "${state.userProfile?.firstName ?? ""} ${state.userProfile?.lastName ?? ""}",
                               textAlign: TextAlign.center,
                               style: GoogleFonts.poppins(
                                   color: lightPrimaryColor,
@@ -175,8 +265,13 @@ class ProfileTabView extends StatelessWidget {
                                   Expanded(
                                       child: ContactChip(
                                           label: "Phone",
-                                          value:
-                                              "+91 ${state.userProfile?.businessContact ?? ""}")),
+                                          value: (state
+                                                      .userProfile
+                                                      ?.businessContact
+                                                      .isEmpty ??
+                                                  true)
+                                              ? "NA"
+                                              : "+91 ${state.userProfile?.businessContact ?? ""}")),
                                 ],
                               ),
                             ),
@@ -186,16 +281,20 @@ class ProfileTabView extends StatelessWidget {
                                   top: 6.h,
                                 ),
                                 child: ListView(
+                                  physics: BouncingScrollPhysics(),
                                   children: [
                                     ProfileListItem(
-                                      onPressed: () {},
+                                      onPressed: () {
+                                        context.navigate
+                                            .push(ChargeTabView.getRoute());
+                                      },
                                       title: "Charges",
                                       icon: Icons.monetization_on_rounded,
                                     ),
                                     ProfileListItem(
                                       onPressed: () {
                                         context.navigate
-                                            .push(InvoiceListView.getRoute());
+                                            .push(InvoiceTabView.getRoute());
                                       },
                                       title: "Invoices",
                                       icon: Icons.person,
@@ -209,7 +308,9 @@ class ProfileTabView extends StatelessWidget {
                                               .state
                                               .userProfile!,
                                           initialFormStep: 0,
-                                        ));
+                                        )).then((value) {
+                                          context.read<UserProfileDetailsCubit>().loadUserProfile();
+                                        });
                                       },
                                       title: "Personal Details",
                                       icon: Icons.person,
@@ -223,16 +324,18 @@ class ProfileTabView extends StatelessWidget {
                                               .state
                                               .userProfile!,
                                           initialFormStep: 1,
-                                        ));
+                                        )).then((value) {
+                                          context.read<UserProfileDetailsCubit>().loadUserProfile();
+                                        });
                                       },
                                       title: "Business Details",
                                       icon: Icons.business_center_rounded,
                                     ),
-                                    ProfileListItem(
-                                      onPressed: () {},
-                                      title: "Bank Details",
-                                      icon: Icons.business_rounded,
-                                    ),
+                                    // ProfileListItem(
+                                    //   onPressed: () {},
+                                    //   title: "Bank Details",
+                                    //   icon: Icons.business_rounded,
+                                    // ),
                                     ProfileListItem(
                                       onPressed: () {
                                         context.navigate.push(MaterialPageRoute(
@@ -245,28 +348,26 @@ class ProfileTabView extends StatelessWidget {
                                     ProfileListItem(
                                       onPressed: () {
                                         showDialog(
-                                            context: context,
-                                            builder: (context) => ClerkDialog(
-                                                  title: 'Logout',
-                                                  body: Text(
-                                                    "Are you sure that you want to logout?",
-                                                    textAlign: TextAlign.center,
-                                                    style: GoogleFonts.nunito(
-                                                      color: textColor,
-                                                      fontSize: 16.sp,
-                                                      fontWeight:
-                                                          FontWeight.w400,
-                                                    ),
-                                                  ),
-                                                  positiveLabel: "Logout",
-                                                  onPositivePressed: () async {
-                                                    context
-                                                        .read<AppCubit>()
-                                                        .logout();
-                                                  },
-                                                  negativeLabel: 'Cancel',
-                                                  onNegativePressed: () {},
-                                                ));
+                                          context: context,
+                                          builder: (context) => ClerkDialog(
+                                            title: 'Logout',
+                                            body: Text(
+                                              "Are you sure that you want to logout?",
+                                              textAlign: TextAlign.center,
+                                              style: GoogleFonts.nunito(
+                                                color: textColor,
+                                                fontSize: 16.sp,
+                                                fontWeight: FontWeight.w400,
+                                              ),
+                                            ),
+                                            positiveLabel: "Logout",
+                                            onPositivePressed: () async {
+                                              context.read<AppCubit>().logout();
+                                            },
+                                            negativeLabel: 'Cancel',
+                                            onNegativePressed: () {},
+                                          ),
+                                        );
                                       },
                                       title: "Logout",
                                       icon: Icons.logout_rounded,
@@ -373,6 +474,7 @@ class ContactChip extends StatelessWidget {
       child: Container(
         padding: EdgeInsets.symmetric(vertical: 8.w, horizontal: 8.h),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Row(
               children: [
@@ -380,11 +482,11 @@ class ContactChip extends StatelessWidget {
                     style: GoogleFonts.nunito(
                         color: backgroundColor, fontSize: 11.sp)),
                 Spacer(),
-                Icon(
-                  Icons.edit,
-                  color: backgroundColor,
-                  size: 20.w,
-                ),
+                // Icon(
+                //   Icons.edit,
+                //   color: backgroundColor,
+                //   size: 20.w,
+                // ),
               ],
             ),
             SizedBox(

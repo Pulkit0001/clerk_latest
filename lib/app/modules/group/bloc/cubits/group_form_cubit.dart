@@ -11,16 +11,22 @@ import '../states/group_form_state.dart';
 class GroupsFormCubit extends Cubit<GroupFormState> {
   GroupsFormCubit({required this.repo, Group? group})
       : super(GroupFormState.initial(group: group)) {
-    if (group == null) {
-      toCreate = true;
-    } else {
+    if (group != null) {
       toCreate = false;
+      nameController = TextEditingController(text: group.name);
+      startTimeController = TextEditingController(text: group.startTime);
+      endTimeController = TextEditingController(text: group.endTime);
+    } else {
+      toCreate = true;
+      nameController = TextEditingController();
+      startTimeController = TextEditingController();
+      endTimeController = TextEditingController();
     }
   }
 
-  final TextEditingController nameController = TextEditingController();
-  final TextEditingController startTimeController = TextEditingController();
-  final TextEditingController endTimeController = TextEditingController();
+  late final TextEditingController nameController ;
+  late final TextEditingController startTimeController;
+  late final TextEditingController endTimeController ;
 
   final GlobalKey<FormState> generalFormState = GlobalKey<FormState>();
 
@@ -84,8 +90,7 @@ class GroupsFormCubit extends Cubit<GroupFormState> {
         name: nameController.text,
         startTime: startTimeController.text,
         endTime: endTimeController.text,
-        status: EntityStatus.active
-    );
+        status: EntityStatus.active);
 
     var res = await repo.createGroup(group: group);
 
@@ -99,5 +104,35 @@ class GroupsFormCubit extends Cubit<GroupFormState> {
         emit(state.copyWith(formState: CustomFormState.idle, errorMessage: r));
       },
     );
+  }
+
+  void updateGroup() async {
+    emit(state.copyWith(formState: CustomFormState.uploading));
+
+    Group group;
+
+    group = state.group.copyWith(
+        name: nameController.text,
+        startTime: startTimeController.text,
+        endTime: endTimeController.text,
+        status: EntityStatus.active);
+
+    var res = await repo.updateGroup(group: group);
+
+    res.fold(
+      (l) {
+        emit(state.copyWith(
+            formState: CustomFormState.success,
+            successMessage: "Group updated successfully."));
+        navigatorKey.currentState?.pop();
+      },
+      (r) {
+        emit(state.copyWith(formState: CustomFormState.idle, errorMessage: r));
+      },
+    );
+  }
+
+  void updateCharges() {
+
   }
 }

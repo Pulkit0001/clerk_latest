@@ -1,6 +1,10 @@
+import 'package:clerk/app/custom_widgets/clerk_progress_indicator.dart';
+import 'package:clerk/app/custom_widgets/empty_state_view.dart';
 import 'package:clerk/app/custom_widgets/group_grid_tile_view.dart';
 import 'package:clerk/app/modules/group/bloc/cubits/group_list_cubit.dart';
 import 'package:clerk/app/modules/group/bloc/states/group_list_state.dart';
+import 'package:clerk/app/modules/group/views/group_form_view.dart';
+import 'package:clerk/app/utils/enums/view_state_enums.dart';
 import 'package:clerk/app/utils/extensions.dart';
 import 'package:clerk/app/utils/locator.dart';
 import 'package:clerk/app/values/colors.dart';
@@ -12,7 +16,8 @@ import 'package:flutter/material.dart';
 import '../../../repository/group_repo/group_repo.dart';
 
 class GroupListBottomSheet extends StatelessWidget {
-  const GroupListBottomSheet({Key? key, required this.selectedGroupId, required this.onGroupSelected })
+  const GroupListBottomSheet(
+      {Key? key, required this.selectedGroupId, required this.onGroupSelected})
       : super(key: key);
 
   final String selectedGroupId;
@@ -27,10 +32,10 @@ class GroupListBottomSheet extends StatelessWidget {
           builder: (context, state) {
             return Card(
               margin: EdgeInsets.symmetric(horizontal: 12.w),
-
               clipBehavior: Clip.hardEdge,
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(24.w))),
+                  borderRadius:
+                      BorderRadius.vertical(top: Radius.circular(24.w))),
               child: Container(
                 padding: EdgeInsets.symmetric(horizontal: 8.w),
                 height: context.height * .65,
@@ -67,24 +72,46 @@ class GroupListBottomSheet extends StatelessWidget {
                       ],
                     ),
                     Expanded(
-                      child: GridView.builder(
-                        shrinkWrap: true,
-                        itemCount: state.groups.length,
-                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisSpacing: 12.h,
-                            mainAxisSpacing: 12.w,
-                            crossAxisCount: 2),
-                        itemBuilder: (context, index) {
-                          return GroupGridTile(
-                            group: state.groups[index],
-                            selected: selectedGroupId == state.groups[index].id,
-                            onPressed: (String value) {
-                              onGroupSelected.call(value);
-                              navigatorKey.currentState?.pop();
-                            },
-                          );
-                        },
-                      ),
+                      child: state.viewState == ViewState.idle
+                          ? GridView.builder(
+                              shrinkWrap: true,
+                              itemCount: state.groups.length,
+                              gridDelegate:
+                                  SliverGridDelegateWithFixedCrossAxisCount(
+                                      crossAxisSpacing: 12.h,
+                                      mainAxisSpacing: 12.w,
+                                      crossAxisCount: 2),
+                              itemBuilder: (context, index) {
+                                return GroupGridTile(
+                                  group: state.groups[index],
+                                  selected:
+                                      selectedGroupId == state.groups[index].id,
+                                  onPressed: (String value) {
+                                    onGroupSelected.call(value);
+                                    navigatorKey.currentState?.pop();
+                                  },
+                                );
+                              },
+                            )
+                          : state.viewState == ViewState.loading
+                              ? ClerkProgressIndicator()
+                              : state.viewState == ViewState.empty
+                                  ? EmptyStateWidget(
+                                      message:
+                                          "Don't you have added any groups yet",
+                                      onActionPressed: () async {
+                                        await context.navigate
+                                            .push(GroupFormPage.getRoute());
+                                      })
+                                  : ErrorStateWidget(
+                                      message:
+                                          "OOPS!! Something went wrong. Please retry.",
+                                      onActionPressed: () async {
+                                        context
+                                            .read<GroupListCubit>()
+                                            .loadGroup(null);
+                                      },
+                                    ),
                     )
                   ],
                 ),

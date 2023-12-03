@@ -48,7 +48,6 @@ class Charge {
       );
 
   Map<String, dynamic> toJson() => {
-        "charge_id": id,
         "charge_name": name,
         "charge_amount": amount,
         "charge_interval": interval.name,

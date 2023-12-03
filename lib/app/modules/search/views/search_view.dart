@@ -21,6 +21,10 @@ import '../bloc/search_cubit.dart';
 class SearchPage extends StatelessWidget {
   final int nbSteps = 5;
 
+  static Route<dynamic> getRoute() => MaterialPageRoute(
+      builder: (_) => BlocProvider(
+          create: (_) => SearchCubit(repo: getIt<CandidateRepo>()),
+          child: SearchPage()));
   @override
   Widget build(BuildContext context) {
     var cubit = context.read<SearchCubit>();
@@ -31,101 +35,112 @@ class SearchPage extends StatelessWidget {
         body: Container(
           child: Column(
             children: [
-              Expanded(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 12.w),
-                  child: Column(
-                    children: [
-                      Expanded(
-                        flex: 3,
-                        child: Card(
-                          clipBehavior: Clip.hardEdge,
-                          color: primaryColor,
-                          margin: EdgeInsets.zero,
-                          elevation: 6,
-                          shadowColor: primaryColor,
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.vertical(
-                                  bottom: Radius.circular(24.w))),
+              Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: 12.w,
+                ),
+                child: Card(
+                  clipBehavior: Clip.hardEdge,
+                  color: primaryColor,
+                  margin: EdgeInsets.zero,
+                  elevation: 6,
+                  shadowColor: primaryColor,
+                  shape: RoundedRectangleBorder(
+                      borderRadius:
+                          BorderRadius.vertical(bottom: Radius.circular(24.w))),
+                  child: Container(
+                    padding: EdgeInsets.symmetric(vertical: 12.h),
+                    decoration: BoxDecoration(
+                        color: primaryColor,
+                        borderRadius: BorderRadius.vertical(
+                            bottom: Radius.circular(24.w))),
+                    child: Row(
+                      children: [
+                        SizedBox(
+                          width: 12.w,
+                        ),
+                        GestureDetector(
+                          onTap: () {
+                            context.navigate.pop();
+                          },
                           child: Container(
+                            padding: EdgeInsets.all(8.w),
                             decoration: BoxDecoration(
-                                color: primaryColor,
-                                borderRadius: BorderRadius.vertical(
-                                    bottom: Radius.circular(24.w))),
-                            child: Row(
-                              children: [
-                                SizedBox(
-                                  width: 12.w,
-                                ),
-                                GestureDetector(
-                                  onTap: () {
-                                    context.navigate.pop();
-                                  },
-                                  child: Container(
-                                    padding: EdgeInsets.all(8.w),
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      color: backgroundColor,
-                                    ),
-                                    child: Icon(
-                                      Icons.arrow_back_ios_rounded,
-                                      color: primaryColor,
-                                      size: 24.w,
-                                    ),
-                                  ),
-                                ),
-                                SizedBox(
-                                  width: 12.w,
-                                ),
-                                Text(
-                                  "Candidate",
-                                  style: GoogleFonts.nunito(
-                                      color: backgroundColor,
-                                      fontSize: 24.sp,
-                                      fontWeight: FontWeight.bold,
-                                      letterSpacing: 1),
-                                )
-                              ],
+                              shape: BoxShape.circle,
+                              color: backgroundColor,
+                            ),
+                            child: Icon(
+                              Icons.arrow_back_ios_rounded,
+                              color: primaryColor,
+                              size: 24.w,
                             ),
                           ),
                         ),
+                        SizedBox(
+                          width: 12.w,
+                        ),
+                        Text(
+                          "Search",
+                          style: GoogleFonts.nunito(
+                              color: backgroundColor,
+                              fontSize: 24.sp,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 1),
+                        )
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: lightPrimaryColor,
+                    gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [lightPrimaryColor, backgroundColor]),
+                    borderRadius: BorderRadius.vertical(
+                        top: Radius.circular(24.w)),
+                  ),
+                  margin:  EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
+                  child: Column(
+                    children: [
+                      Padding(
+                        padding:  EdgeInsets.symmetric(horizontal: 12.w),
+                        child: CustomTextField(
+                          controller: cubit.searchController,
+                          helperText: "Enter Candidate's Name",
+                          leading: null,
+                          label: "",
+                          isOutlined: true,
+                          trailing: Icons.search,
+                          onTrailingTapped: () {
+                            FocusManager.instance.primaryFocus?.unfocus();
+                            cubit.searchQuery();
+                          },
+                        ),
                       ),
                       Expanded(
-                          flex: 1,
-                          child: Container(
-                            color: Colors.transparent,
-                          ))
+                        child: BlocBuilder<SearchCubit, SearchState>(
+                          builder: (context, state) {
+                            if (state.viewState == ViewState.loading) {
+                              return ClerkProgressIndicator();
+                            } else if (state.viewState == ViewState.idle) {
+                              return CandidateVerticalListView.getWidget(
+                                  state.searchedItems);
+                            } else {
+                              return EmptyStateWidget(
+                                  image: '',
+                                  message: "Didn't find any relevant Results",
+                                  onActionPressed: () {});
+                            }
+                          },
+                        ),
+                      ),
                     ],
                   ),
                 ),
-                flex: 1,
-              ),
-              Column(
-                children: [
-                  CustomTextField(
-                    controller: cubit.searchController,
-                    helperText: "Enter Candidate's Name",
-                    leading: null,
-                    label: "Search Candidate",
-                    trailing: Icons.search,
-                    onTrailingTapped: () {
-                      cubit.searchQuery();
-                    },
-                  ),
-                  BlocBuilder<SearchCubit, SearchState>(
-                    builder: (context, state) {
-                      if (state.viewState == ViewState.loading) {
-                        return ClerkProgressIndicator();
-                      } else if (state.viewState == ViewState.idle) {
-                        return CandidateVerticalListView.getWidget(
-                            state.searchedItems);
-                      } else {
-                        return EmptyStateWidget(
-                            image: '', message: "", onActionPressed: () {});
-                      }
-                    },
-                  ),
-                ],
               ),
             ],
           ),

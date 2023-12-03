@@ -1,3 +1,5 @@
+import 'package:email_validator/email_validator.dart';
+
 extension TextFieldValidators on String {
   String? validateAsName() {
     replaceAll("-", "\-");
@@ -16,6 +18,15 @@ extension TextFieldValidators on String {
     replaceAll('\ '.substring(0, 1), "\\");
 
     return isNotEmpty ? null : "Enter a valid age";
+  }
+
+  String? validateAsAmount() {
+    replaceAll("-", "\-");
+    replaceAll('\ '.substring(0, 1), "\\");
+
+    return isNotEmpty && double.tryParse(this) != null
+        ? null
+        : "Enter a valid amount";
   }
 
   String? validateAsPhone() {
@@ -41,8 +52,6 @@ extension TextFieldValidators on String {
   }
 
   String? validateAsEmail() {
-    replaceAll("-", "\-");
-    replaceAll('\ '.substring(0, 1), "\\");
-    return isNotEmpty ? null : "Enter a valid email";
+    return EmailValidator.validate(this) ? null : "Enter a valid email";
   }
 }

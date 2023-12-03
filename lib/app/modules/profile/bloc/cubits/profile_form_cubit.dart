@@ -5,6 +5,7 @@ import 'package:clerk/app/modules/profile/bloc/states/profile_form_state.dart';
 import 'package:clerk/app/modules/profile/views/personal_form_view.dart';
 import 'package:clerk/app/repository/user_profile_repo/user_profile_repo.dart';
 import 'package:clerk/app/utils/enums/payment_cycle.dart';
+import 'package:clerk/app/utils/enums/profile_status.dart';
 import 'package:clerk/app/utils/enums/view_state_enums.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -97,6 +98,7 @@ class UserProfileFormCubit extends Cubit<UserProfileFormState> {
       emit(
         state.copyWith(),
       );
+      saveUserProfile();
     }
   }
 
@@ -108,6 +110,7 @@ class UserProfileFormCubit extends Cubit<UserProfileFormState> {
       emit(
         state.copyWith(formState: CustomFormState.idle),
       );
+      saveUserProfile();
     }
   }
 
@@ -127,6 +130,7 @@ class UserProfileFormCubit extends Cubit<UserProfileFormState> {
             businessEmail: businessEmailController.text,
             businessContact: businessPhoneController.text,
             businessAddress: businessAddressController.text,
+            profileStatus: ProfileStatus.completed,
             businessLogo: l);
         var res = await repo.createUserProfile(profile: profile);
         res.fold(
@@ -158,6 +162,7 @@ class UserProfileFormCubit extends Cubit<UserProfileFormState> {
           businessEmail: businessEmailController.text,
           businessContact: businessPhoneController.text,
           businessAddress: businessAddressController.text,
+          profileStatus: ProfileStatus.completed,
           businessLogo: '');
       var res = await repo.createUserProfile(profile: profile);
       res.fold(

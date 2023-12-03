@@ -1,4 +1,6 @@
+import 'package:clerk/app/custom_widgets/custom_filled_button.dart';
 import 'package:clerk/app/custom_widgets/custom_stepper.dart';
+import 'package:clerk/app/data/models/group_data_model.dart';
 import 'package:clerk/app/modules/group/bloc/cubits/group_form_cubit.dart';
 import 'package:clerk/app/modules/group/bloc/states/group_form_state.dart';
 import 'package:clerk/app/modules/group/views/select_charges_view.dart';
@@ -20,16 +22,21 @@ List<Widget> groupFormPages = [
 ];
 
 class GroupFormPage extends StatelessWidget {
+  const GroupFormPage({super.key, this.group});
 
-  static Route<dynamic> getRoute() =>
-      MaterialPageRoute(builder: (context) => GroupFormPage());
+  static Route<dynamic> getRoute({Group? group}) => MaterialPageRoute(
+      builder: (context) => GroupFormPage(
+            group: group,
+          ));
 
+  final Group? group;
   final int nbSteps = 2;
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider<GroupsFormCubit>(
-      create: (context) => GroupsFormCubit(repo: getIt<GroupRepo>()),
+      create: (context) =>
+          GroupsFormCubit(repo: getIt<GroupRepo>(), group: group),
       child: SafeArea(
         child: Scaffold(
             backgroundColor: backgroundColor,
@@ -113,13 +120,15 @@ class GroupFormPage extends StatelessWidget {
                           child: Container(
                             margin: EdgeInsets.symmetric(horizontal: 12.w),
                             child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
-                                Padding(
-                                  padding:
-                                      EdgeInsets.only(top: 8.h, bottom: 20.h),
-                                  child: CustomStepper(
-                                      steps: 2, currentStep: state.formStep),
-                                ),
+                                if (context.read<GroupsFormCubit>().toCreate)
+                                  Padding(
+                                    padding:
+                                        EdgeInsets.only(top: 8.h, bottom: 20.h),
+                                    child: CustomStepper(
+                                        steps: 2, currentStep: state.formStep),
+                                  ),
                                 Expanded(
                                   child: Container(
                                       padding: EdgeInsets.symmetric(
@@ -137,80 +146,111 @@ class GroupFormPage extends StatelessWidget {
                                             top: Radius.circular(24.w)),
                                       ),
                                       child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.stretch,
                                         children: [
                                           Expanded(
-                                              child:
-                                                  groupFormPages[state.formStep]),
-                                          // Spacer(),
-                                          Padding(
-                                            padding: EdgeInsets.all(12.w),
-                                            child: Row(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.center,
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.center,
-                                              children: <Widget>[
-                                                if (state.formStep > 0) ...[
-                                                  FloatingActionButton(
-                                                    onPressed: () {
-                                                      if (state.formStep > 0) {
-                                                        context
-                                                            .read<
-                                                                GroupsFormCubit>()
-                                                            .changeFormStep(
-                                                                state.formStep -
-                                                                    1);
-                                                      }
-                                                    },
-                                                    elevation: 6,
-                                                    materialTapTargetSize:
-                                                        MaterialTapTargetSize
-                                                            .padded,
-                                                    backgroundColor:
-                                                        backgroundColor,
-                                                    child: Icon(
-                                                      Icons.arrow_back_rounded,
-                                                      color: primaryColor,
-                                                      size: 36.w,
-                                                    ),
-                                                  )
-                                                ],
-                                                Spacer(),
-                                                FloatingActionButton(
+                                              child: !context
+                                                      .read<GroupsFormCubit>()
+                                                      .toCreate
+                                                  ? SingleChildScrollView(
+                                                      child: Column(
+                                                        children: groupFormPages
+                                                            .sublist(0, 1),
+                                                      ),
+                                                    )
+                                                  : groupFormPages[
+                                                      state.formStep]),
+                                          !context
+                                                  .read<GroupsFormCubit>()
+                                                  .toCreate
+                                              ? CustomFilledButton(
+                                                  label: "UPDATE",
                                                   onPressed: () {
-                                                    var cubit = context
-                                                        .read<GroupsFormCubit>();
-                                                    if (cubit.validateForm()) {
-                                                      if (state.formStep <
-                                                          nbSteps - 1) {
-                                                        cubit.changeFormStep(
-                                                            state.formStep + 1);
-                                                      } else {
-                                                        if (state.formStep ==
-                                                            nbSteps - 1) {
-                                                          cubit.createGroup();
-                                                        }
-                                                      }
-                                                    }
+                                                    context
+                                                        .read<GroupsFormCubit>()
+                                                        .updateGroup();
                                                   },
-                                                  elevation: 6,
-                                                  materialTapTargetSize:
-                                                      MaterialTapTargetSize
-                                                          .padded,
-                                                  backgroundColor:
-                                                      backgroundColor,
-                                                  child: Icon(
-                                                    state.formStep >= nbSteps - 1
-                                                        ? Icons.check_rounded
-                                                        : Icons
-                                                            .arrow_forward_rounded,
-                                                    color: primaryColor,
-                                                    size: 36.w,
+                                                )
+                                              : Padding(
+                                                  padding: EdgeInsets.all(12.w),
+                                                  child: Row(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .center,
+                                                    mainAxisAlignment:
+                                                        MainAxisAlignment
+                                                            .center,
+                                                    children: <Widget>[
+                                                      if (state.formStep >
+                                                          0) ...[
+                                                        FloatingActionButton(
+                                                          onPressed: () {
+                                                            if (state.formStep >
+                                                                0) {
+                                                              context
+                                                                  .read<
+                                                                      GroupsFormCubit>()
+                                                                  .changeFormStep(
+                                                                      state.formStep -
+                                                                          1);
+                                                            }
+                                                          },
+                                                          elevation: 6,
+                                                          materialTapTargetSize:
+                                                              MaterialTapTargetSize
+                                                                  .padded,
+                                                          backgroundColor:
+                                                              backgroundColor,
+                                                          child: Icon(
+                                                            Icons
+                                                                .arrow_back_rounded,
+                                                            color: primaryColor,
+                                                            size: 36.w,
+                                                          ),
+                                                        )
+                                                      ],
+                                                      Spacer(),
+                                                      FloatingActionButton(
+                                                        onPressed: () {
+                                                          var cubit = context.read<
+                                                              GroupsFormCubit>();
+                                                          if (cubit
+                                                              .validateForm()) {
+                                                            if (state.formStep <
+                                                                nbSteps - 1) {
+                                                              cubit.changeFormStep(
+                                                                  state.formStep +
+                                                                      1);
+                                                            } else {
+                                                              if (state
+                                                                      .formStep ==
+                                                                  nbSteps - 1) {
+                                                                cubit
+                                                                    .createGroup();
+                                                              }
+                                                            }
+                                                          }
+                                                        },
+                                                        elevation: 6,
+                                                        materialTapTargetSize:
+                                                            MaterialTapTargetSize
+                                                                .padded,
+                                                        backgroundColor:
+                                                            backgroundColor,
+                                                        child: Icon(
+                                                          state.formStep >=
+                                                                  nbSteps - 1
+                                                              ? Icons
+                                                                  .check_rounded
+                                                              : Icons
+                                                                  .arrow_forward_rounded,
+                                                          color: primaryColor,
+                                                          size: 36.w,
+                                                        ),
+                                                      ),
+                                                    ],
                                                   ),
                                                 ),
-                                              ],
-                                            ),
-                                          ),
                                         ],
                                       )),
                                 ),

@@ -41,76 +41,83 @@ class ApplyExtraChargeView extends StatelessWidget {
             ),
             Expanded(
               child: BlocProvider<ChargesListCubit>(
-                create: (context) => ChargesListCubit(repo: getIt<ChargeRepo>(), charges: null),
-                child: Builder(
-                  builder: (context) {
-                    return BlocBuilder<ChargesListCubit, ChargesListState>(
-                      builder: (context, state) {
-                        switch (state.viewState) {
-                          case ViewState.loading:
-                            {
-                              return ClerkProgressIndicator();
-                            }
-                          case ViewState.empty:
-                            {
-                              return EmptyStateWidget(
-                                message: "Don't you have created \n  any charges yet?",
-                                image: '',
-                                onActionPressed: () async {
-                                  context.navigate.push(ChargesFormView.getRoute());
-                                },
-                              );
-                            }
-                          case ViewState.idle:
-                            {
-                              return Column(
-                                children: [
-                                  SizedBox(
-                                    height: 4.h,
-                                  ),
-                                  Expanded(
-                                    child: Container(
-                                      child: GridView.builder(
-                                        shrinkWrap: true,
-                                        itemCount: state.charges.length,
-                                        gridDelegate:
-                                            SliverGridDelegateWithFixedCrossAxisCount(
-                                                crossAxisSpacing: 12.h,
-                                                mainAxisSpacing: 12.w,
-                                                crossAxisCount: 2),
-                                        itemBuilder: (context, index) {
-                                          return ChargeGridTile(
-                                            charge: state.charges[index],
-                                            selected: cubit.state.candidate.extraCharges
-                                                .contains(state.charges[index].id),
-                                            onPressed: (String value) {
-                                              if(!cubit.state.candidate.groupCharges.contains(value)) {
-                                                if (cubit.state.candidate
-                                                    .extraCharges
-                                                    .contains(value)) {
-                                                  cubit.removeCharge(value);
-                                                } else {
-                                                  cubit.addCharge(value);
-                                                }
+                create: (context) => ChargesListCubit(
+                    repo: getIt<ChargeRepo>(),
+                    charges: null,
+                    excludeCharges: cubit.state.candidate.groupCharges),
+                child: Builder(builder: (context) {
+                  return BlocBuilder<ChargesListCubit, ChargesListState>(
+                    builder: (context, state) {
+                      switch (state.viewState) {
+                        case ViewState.loading:
+                          {
+                            return ClerkProgressIndicator();
+                          }
+                        case ViewState.empty:
+                          {
+                            return EmptyStateWidget(
+                              message:
+                                  "Don't you have created \n  any charges yet?",
+                              image: '',
+                              onActionPressed: () async {
+                                context.navigate
+                                    .push(ChargesFormView.getRoute());
+                              },
+                            );
+                          }
+                        case ViewState.idle:
+                          {
+                            return Column(
+                              children: [
+                                SizedBox(
+                                  height: 4.h,
+                                ),
+                                Expanded(
+                                  child: Container(
+                                    child: GridView.builder(
+                                      shrinkWrap: true,
+                                      itemCount: state.charges.length,
+                                      gridDelegate:
+                                          SliverGridDelegateWithFixedCrossAxisCount(
+                                              crossAxisSpacing: 12.h,
+                                              mainAxisSpacing: 12.w,
+                                              crossAxisCount: 2),
+                                      itemBuilder: (context, index) {
+                                        return ChargeGridTile(
+                                          charge: state.charges[index],
+                                          selected: cubit
+                                              .state.candidate.extraCharges
+                                              .contains(
+                                                  state.charges[index].id),
+                                          onPressed: (String value) {
+                                            if (!cubit
+                                                .state.candidate.groupCharges
+                                                .contains(value)) {
+                                              if (cubit
+                                                  .state.candidate.extraCharges
+                                                  .contains(value)) {
+                                                cubit.removeCharge(value);
+                                              } else {
+                                                cubit.addCharge(value);
                                               }
-                                            },
-                                          );
-                                        },
-                                      ),
+                                            }
+                                          },
+                                        );
+                                      },
                                     ),
                                   ),
-                                ],
-                              );
-                            }
-                          default:
-                            {
-                              return Container();
-                            }
-                        }
-                      },
-                    );
-                  }
-                ),
+                                ),
+                              ],
+                            );
+                          }
+                        default:
+                          {
+                            return Container();
+                          }
+                      }
+                    },
+                  );
+                }),
               ),
             ),
           ],

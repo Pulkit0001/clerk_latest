@@ -20,77 +20,86 @@ class ChargeVerticalListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      color: backgroundColor,
-      shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(8.h))),
-      shadowColor: primaryColor,
-      elevation: 2,
-      margin: EdgeInsets.symmetric(vertical: 8.h, horizontal: 16.h),
-      child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 12.w),
-        foregroundDecoration: BoxDecoration(
-            borderRadius: BorderRadius.all(Radius.circular(8.h)),
-            color: Colors.transparent),
-        width: double.infinity,
-        alignment: Alignment.center,
-        child: Stack(
-          children: [
-            Padding(
-              padding: EdgeInsets.only(top: 8.h, bottom: 16.h),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          charge.name,
-                          textAlign: TextAlign.center,
-                          style: GoogleFonts.nunito(
-                            color: primaryColor,
-                            fontSize: 16.sp,
-                            fontWeight: FontWeight.bold
-                          ),
-                        ),
-                        Text(
-                          charge.description,
-                          textAlign: TextAlign.center,
-                          style: GoogleFonts.nunito(
-                            color: textColor,
-                            fontSize: 14.sp,
-                            // fontStyle: FontStyle.italic
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
+    return Container(
+      // margin: EdgeInsets.symmetric( horizontal: 12.w),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.all(Radius.circular(8.h)),
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              offset: Offset(4, 4),
+              blurRadius: 10)
+        ],
+      ),
+      padding: EdgeInsets.symmetric(horizontal: 12.w),
+      foregroundDecoration: BoxDecoration(
+          borderRadius: BorderRadius.all(Radius.circular(8.h)),
+          color: Colors.transparent),
+      width: double.infinity,
+      alignment: Alignment.center,
+      child: Stack(
+        children: [
+          Padding(
+            padding: EdgeInsets.only(top: 8.h, bottom: 16.h),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(charge.paymentType == PaymentType.oneTime ? charge.paymentType.label : charge.interval.label,
+                      Text(
+                        charge.name.capitalizeWords(),
+                        textAlign: TextAlign.start,
                         style: GoogleFonts.nunito(
-                          color: primaryColor,
+                            color: textColor,
+                            fontSize: 16.sp,
+                            fontWeight: FontWeight.bold),
+                      ),
+                      Text(
+                        charge.description.capitalizeFirstLetter(),
+                        textAlign: TextAlign.start,
+                        maxLines: 2,
+                        softWrap: true,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.nunito(
+                          color: textColor,
                           fontSize: 14.sp,
                           // fontStyle: FontStyle.italic
                         ),
                       ),
-                      Text('\u20b9 ${charge.amount.toStringAsFixed(2)}',
-
-                        style: GoogleFonts.nunito(
-                            color: primaryColor,
-                            fontSize: 16.sp,
-                            fontWeight: FontWeight.bold
-                          // fontStyle: FontStyle.italic
-                        ),
-                      ),
                     ],
-                  )
-                ],
-              ),
+                  ),
+                ),
+                SizedBox(width: 12.w,),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      charge.paymentType == PaymentType.oneTime
+                          ? charge.paymentType.label
+                          : charge.interval.label,
+                      style: GoogleFonts.nunito(
+                        color: textColor,
+                        fontSize: 14.sp,
+                        // fontStyle: FontStyle.italic
+                      ),
+                    ),
+                    Text(
+                      '\u20b9 ${charge.amount.toStringAsFixed(2)}',
+                      style: GoogleFonts.nunito(
+                          color: primaryColor,
+                          fontSize: 16.sp,
+                          fontWeight: FontWeight.bold
+                          // fontStyle: FontStyle.italic
+                          ),
+                    ),
+                  ],
+                )
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

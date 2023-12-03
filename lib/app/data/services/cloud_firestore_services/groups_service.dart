@@ -3,6 +3,7 @@ import 'package:clerk/app/data/services/session_service.dart';
 import 'package:clerk/app/utils/custom_exception_handler.dart';
 import 'package:clerk/app/values/strings.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
 
 class GroupsService {
   final Session session;
@@ -27,6 +28,25 @@ class GroupsService {
     }
   }
 
+  Future<String> getCurrentGroup() async {
+    try {
+      var id = session.currentUser!.uid;
+      CollectionReference groups = firestore
+          .collection(USERS_COLLECTION)
+          .doc(id)
+          .collection(GROUPS_COLLECTION);
+
+      // final currentTime = DateFormat('HH:mm ').format(DateTime.now());
+      var res = await groups
+          // .where('startTime', isGreaterThanOrEqualTo: currentTime)
+          .get();
+      return res.docs.isEmpty ? "" : res.docs.first.id;
+    } on Exception catch (e) {
+      CustomExceptionHandler.handle(e);
+      rethrow;
+    }
+  }
+
   Future<List<Group>> getGroups({List<String>? groupsId}) async {
     try {
       var id = session.currentUser!.uid;
@@ -43,8 +63,8 @@ class GroupsService {
             groupsId.contains(element.id) &&
             element.data()['group_status'] == 'active');
       } else {
-        groupDocs = res.docs.where((element) =>
-            element.data()['group_status'] == 'active');
+        groupDocs = res.docs
+            .where((element) => element.data()['group_status'] == 'active');
         groupDocs = res.docs;
       }
 

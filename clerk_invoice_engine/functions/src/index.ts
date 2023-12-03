@@ -7,40 +7,35 @@ import { InovieService } from "./service/invoice_service";
 import serviceAccount from "./clerk-service-account.json";
 
 admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount as admin.ServiceAccount),
-  });
-export const engine = new ClerkEngine(
-    new CandidateService(admin.firestore()),
-    new ChargeService(admin.firestore()),
-    new InovieService(admin.firestore()),
-); 
-// // Start writing functions
-// // https://firebase.google.com/docs/functions/typescript
-//
-export const helloWorld = functions.https.onRequest((request, response) => {
-  functions.logger.info("Hello logs!", { structuredData: true });
-  response.send("Hello from Firebase!");
+  credential: admin.credential.cert(serviceAccount as admin.ServiceAccount),
 });
+export const engine = new ClerkEngine(
+  new CandidateService(admin.firestore()),
+  new ChargeService(admin.firestore()),
+  new InovieService(admin.firestore())
+);
 
 export const generateInvoiceForCandidate = functions.https.onCall(
-  async (request, response) => {
+  async (req, resp) => {
     try {
-        var candidateID = request.body.id;
-        await engine.generateInvoice(candidateID, request.auth.uid);
-        return {
-          status: false,
-          message: "Server Error Can't generate Invoice",
-        };
+      // if (!context.auth) return {status: 'error', code: 401, message: 'Not signed in'}
+      console.log("In Try block");
+      console.log(req);
+      console.log("Request Object Print .........................................");
+      var candidateID = req.candidate_id;
+      var res = await engine.generateInvoice(candidateID, req.user_id);
+      return {
+        status: true,
+        data: res,
+        message: "Invoice Generated succesfully",
+      };
     } catch (error) {
-       return {
-          error: error,
-          status: false,
-          message: "Server Error Can't generate Invoice",
-        };
+      console.log("In catch block");
+      return {
+        error: error,
+        status: false,
+        message: "Server Error Can't generate Invoice",
+      };
     }
   }
 );
-
-// export const expireSubscriptions = functions.pubsub
-//   .schedule("every 1 mins")
-//   .onRun(() => iapRepository.expireSubscriptions());

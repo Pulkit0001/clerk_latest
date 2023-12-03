@@ -4,6 +4,7 @@ import 'package:clerk/app/repository/invoice_repo/invoice_repo.dart';
 import 'package:clerk/app/utils/enums/entity_status.dart';
 import 'package:clerk/app/utils/enums/invoice_canceller.dart';
 import 'package:clerk/app/utils/enums/invoice_status.dart';
+import 'package:clerk/app/utils/enums/pay_mode.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dartz/dartz.dart';
 
@@ -19,6 +20,8 @@ class InvoiceRepoImpl extends InvoiceRepo {
       var res = await service.getInvoiceById(invoiceId: invoiceId);
       await service.updateInvoice(res.copyWith(
           status: EntityStatus.disabled,
+          cancelledOn: DateTime.now(),
+          invoiceStatus: InvoiceStatus.cancelled,
           cancelledBy: InvoiceCanceller.payee,
           cancelReason: cancelReason));
       return Left(true);
@@ -52,7 +55,7 @@ class InvoiceRepoImpl extends InvoiceRepo {
 
   @override
   Future<Either<List<Invoice>, String>> getInvoices(
-      {List<String>? candidateIds, List<InvoiceStatus>? status}) async {
+      {List<String>? candidateIds, InvoiceStatus? status}) async {
     try {
       var invoices =
           await service.getInvoices(candidateIds: candidateIds, status: status);
@@ -63,11 +66,21 @@ class InvoiceRepoImpl extends InvoiceRepo {
   }
 
   @override
+  Future<Either<bool, String>> updateInvoice({required Invoice invoice}) async {
+    try {
+      await service.updateInvoice(invoice);
+      return Left(true);
+    } catch (e) {
+      return Right(e.toString());
+    }
+  }
+
+  @override
   Future<Either<num, String>> getTotalSum(
-      {List<String>? candidateIds, List<InvoiceStatus>? status}) async {
+      {List<String>? candidateIds, InvoiceStatus? status}) async {
     try {
       var res =
-      await service.getTotalSum(candidateIds: candidateIds, status: status);
+          await service.getTotalSum(candidateIds: candidateIds, status: status);
       return Left(res);
     } catch (e) {
       return Right(e.toString());
@@ -75,15 +88,17 @@ class InvoiceRepoImpl extends InvoiceRepo {
   }
 
   @override
-  Future<Either<bool, String>> payInvoice({required String invoiceId}) async {
+  Future<Either<bool, String>> payInvoice(
+      {required String invoiceId, required InvoicePayMode payMode}) async {
     try {
       var res = await service.getInvoiceById(invoiceId: invoiceId);
       await service.updateInvoice(res.copyWith(
-        status: EntityStatus.disabled,
-        invoiceStatus: InvoiceStatus.paid,
-        paidOn: DateTime.now(),
-        paidAmount: res.totalAmount,
-      ));
+          status: EntityStatus.disabled,
+          invoiceStatus: InvoiceStatus.paid,
+          paidOn: DateTime.now(),
+          payMode: InvoicePayMode.cash,
+          paidAmount: res.totalAmount,
+          receiptId: 'NA'));
       return Left(true);
     } catch (e) {
       return Right(e.toString());

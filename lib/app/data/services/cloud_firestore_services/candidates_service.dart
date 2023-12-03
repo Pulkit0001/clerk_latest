@@ -1,6 +1,7 @@
 import 'package:clerk/app/data/services/session_service.dart';
 import 'package:clerk/app/utils/custom_exception_handler.dart';
 import 'package:clerk/app/utils/enums/entity_status.dart';
+import 'package:clerk/app/utils/extensions.dart';
 import 'package:clerk/app/values/strings.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -47,14 +48,17 @@ class CandidatesService {
   Future<List<Candidate>> getCandidates({List<String>? candidatesId}) async {
     try {
       var id = session.currentUser!.uid;
-      final candidatesQuery = firestore
+      if(candidatesId != null && candidatesId.isEmpty){
+        return <Candidate>[];
+      }
+      dynamic candidatesQuery = firestore
           .collection(USERS_COLLECTION)
           .doc(id)
           .collection(CANDIDATES_COLLECTION)
           .where('candidate_status', isEqualTo: 'active');
 
-      if (candidatesId != null) {
-        candidatesQuery.where(FieldPath.documentId, whereIn: candidatesId);
+      if (candidatesId.isNotNullEmpty) {
+        candidatesQuery = candidatesQuery.where(FieldPath.documentId, whereIn: candidatesId);
       }
 
       final res = (await candidatesQuery.get());
@@ -63,7 +67,10 @@ class CandidatesService {
 
       List<Candidate> candidateList = [];
       for (var e in candidateDocs) {
-        var charges = await e.reference.collection(CHARGES_COLLECTION).get();
+        var charges = await e.reference
+            .collection(CHARGES_COLLECTION)
+            .where('status', isEqualTo: 'active')
+            .get();
         var extraCharges = charges.docs
             .where((element) => element.data()['is_extra'])
             .map((e) => e.data()['charge_id'])
@@ -159,23 +166,25 @@ class CandidatesService {
     List<String> charges,
   ) async {
     try {
-      var id = session.currentUser!.uid;
-      var chargeDocs = await firestore
-          .collection(USERS_COLLECTION)
-          .doc(id)
-          .collection(CANDIDATES_COLLECTION)
-          .doc(candidateId)
-          .collection(CHARGES_COLLECTION)
-          .where('charge_id', whereIn: charges)
-          .get();
+      if(charges.isNotEmpty) {
+        var id = session.currentUser!.uid;
+        var chargeDocs = await firestore
+            .collection(USERS_COLLECTION)
+            .doc(id)
+            .collection(CANDIDATES_COLLECTION)
+            .doc(candidateId)
+            .collection(CHARGES_COLLECTION)
+            .where('charge_id', whereIn: charges)
+            .get();
 
-      WriteBatch writeBatch = firestore.batch();
-      for (var e in chargeDocs.docs) {
-        writeBatch.update(e.reference, {
-          'status': EntityStatus.disabled.name,
-        });
+        WriteBatch writeBatch = firestore.batch();
+        for (var e in chargeDocs.docs) {
+          writeBatch.update(e.reference, {
+            'status': EntityStatus.disabled.name,
+          });
+        }
+        await writeBatch.commit();
       }
-      await writeBatch.commit();
       return true;
     } on Exception catch (e) {
       CustomExceptionHandler.handle(e);

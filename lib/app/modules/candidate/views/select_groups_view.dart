@@ -103,9 +103,7 @@ class SelectGroupView extends StatelessWidget {
                                     )
                                   ],
                                 ),
-                                SizedBox(
-                                  height: 4.h,
-                                ),
+
                                 Container(
                                   // height: 200.h,
                                   child: GridView.builder(
